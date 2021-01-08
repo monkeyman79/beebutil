@@ -507,8 +507,8 @@ ENDPROC
 :: REM Update displayed title and sector count
 DEF PROCupdate
 PROCmsg("")
-stitle$="":scnt%=800:strk%=0
-dtitle$="":dcnt%=800:dtrk%=0
+stitle$="":sscnt%=800:strk%=0
+dtitle$="":dscnt%=800:dtrk%=0
 IF FNreaddir(sdrv%)=0 THEN stitle$=FNtitle:sscnt%=FNscnt:strk%=sscnt% DIV 10
 IF FNreaddir(ddrv%)=0 THEN dtitle$=FNtitle:dscnt%=FNscnt:dtrk%=dscnt% DIV 10
 msg$="Free memory "+STR$((!4AND&FFFF)-(!2AND&FFFF))+" bytes"
@@ -610,7 +610,7 @@ ON ERROR PROCerror
 *FX 4,2
 PROCcuron(0)
 sdrv%=0:ddrv%=1
-scnt%=800:dcnt%=800
+sscnt%=800:dscnt%=800
 tmode%=1
 rep%=10:try%=10
 act%=2:ver%=1
