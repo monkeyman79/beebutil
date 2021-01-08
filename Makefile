@@ -27,7 +27,7 @@ $(PRG)_S: $(PRG)_S.hh
 	echo 'RUN'; ) | tr '\n' '\r' >>$@
 
 $(PRG)_S.hh: $(PRG).bas Makefile
-	./build/prep.sh $< $@
+	./build/striprem.sh $< $@
 
 clean:
 	rm -f $(PRG)_S.hh $(PRG)_S !BOOT !BOOT2 new.ssd
