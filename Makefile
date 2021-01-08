@@ -26,7 +26,7 @@ $(PRG)_S: $(PRG)_S.hh
 	echo '60 CALL !-4'; \
 	echo 'RUN'; ) | tr '\n' '\r' >>$@
 
-$(PRG)_S.hh: $(PRG).bas Makefile
+$(PRG)_S.hh: butil.bas Makefile
 	./build/striprem.sh $< $@
 
 clean:
