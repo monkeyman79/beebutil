@@ -1,4 +1,4 @@
-# beebutil
+# beebutils
 Utilities for BBC Micro (Model B)
 
 ## butil.bas
