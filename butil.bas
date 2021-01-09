@@ -269,7 +269,6 @@ ENDPROC
 
 :: REM Update displayed title and sector count
 DEF PROCupdate
-PROCmsg("")
 stitle$="":sscnt%=800:strk%=0:sfcnt%=0
 dtitle$="":dscnt%=800:dtrk%=0:dfcnt%=0
 IF FNreaddir(sdrv%)=0 THEN stitle$=FNtitle:sscnt%=FNscnt:sfcnt%=FNfcnt
@@ -379,6 +378,17 @@ IF FNisbad THEN N%=N%+1
 NEXT
 =N%
 
+:: REM List damaged files using directory sector in buffer
+DEF PROCbadfiles
+N%=0
+PRINT "Damaged files list:"
+FOR F%=sfcnt%-1 TO 0 STEP -1
+IF F%>=0 THEN name$=FNfname(F%):IF FNhasbad THEN N%=N%+1:PRINT name$;SPC(10-LEN(name$));
+NEXT
+IF (N% MOD 4)<>0 THEN PRINT
+PRINT STR$(N%);" damaged files";
+ENDPROC
+
 :: REM Display list of bad sectors and files
 DEF PROCbads
 PROCmsg("")
@@ -400,14 +410,7 @@ IF (N% MOD 4)<>0 THEN PRINT
 PRINT STR$(N%);" bad sectors"
 C%=0:isbad%=FNisbad
 C%=1:isbad%=isbad% OR FNisbad
-IF isbad% THEN PRINT "Catalog damaged" ELSE PRINT "Catalog not damaged"
-N%=0
-PRINT "Damaged files list:"
-FOR F%=sfcnt%-1 TO 0 STEP -1
-IF F%>=0 THEN name$=FNfname(F%):IF FNhasbad THEN N%=N%+1:PRINT name$;SPC(10-LEN(name$));
-NEXT
-IF (N% MOD 4)<>0 THEN PRINT
-PRINT STR$(N%);" damaged files"
+IF FNreaddir(sdrv%)<>0 THEN PRINT "Catalog damaged" ELSE PROCbadfiles
 VDU 28,0,24,39,0
 PROCaskret("Press RETURN",1)
 ENDPROC
@@ -581,8 +584,8 @@ DEF FNmemcmp(ptr1%,ptr2%,size%)
 LOCAL R%
 !rwpar%=ptr1%
 rwpar%!2=ptr2%
-rwpar%!4=size
-X%=rwpar% AND 255:Y%=rwpar% MOD 256
+rwpar%!4=size%
+X%=rwpar% AND 255:Y%=rwpar% DIV 256
 R%=USR(memcmp)
 vmis%=size%-(((R% + &100) AND &FFFF00) DIV 256)
 =R% AND &FF
@@ -593,7 +596,7 @@ LOCAL R%
 !rwpar%=ptr%
 rwpar%?2=val%
 rwpar%!3=size%
-X%=rwpar% AND 255:Y%=rwpar% MOD 256
+X%=rwpar% AND 255:Y%=rwpar% DIV 256
 CALL memset
 ENDPROC
 
@@ -602,7 +605,7 @@ DEF PROCdump(addr%,vaddr%,cnt%)
 !rwpar%=vaddr%
 rwpar%!4=addr%
 rwpar%!6=cnt%
-X%=rwpar% AND 255:Y%=rwpar% MOD 256
+X%=rwpar% AND 255:Y%=rwpar% DIV 256
 CALL hexdump
 ENDPROC
 
