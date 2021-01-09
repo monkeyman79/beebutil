@@ -1,33 +1,51 @@
-.INTERMEDIATE: BUTIL_S.hh !BOOT !BOOT2
+SRCS = butil.bas bu_lib.asm
+BOOT = butil.bas
+TITLE = Backup util
 
-PRG = BUTIL
+EXECS = $(patsubst %.asm,%.exec,$(SRCS:%.bas=%.exec))
 
-new.ssd: !BOOT !BOOT2 $(PRG)_S
+NL2CR = tr -d '\r' | tr '\n' '\r'
+STRIPREM = s/:: REM .*$$// ; \
+		s/ REM .*$$// ; \
+		s/\\.*$$//
+
+.INTERMEDIATE: !BOOT !BOOT2 $(EXECS)
+
+toupper = $(shell echo $(1) | LC_ALL=C tr '[:lower:]' '[:upper:]')
+tolower = $(shell echo $(1) | LC_ALL=C tr '[:upper:]' '[:lower:]')
+
+new.ssd: !BOOT !BOOT2
 	cp ./build/empty.ssd new.ssd
-	./build/BBCIM.EXE -ab new.ssd !BOOT !BOOT2 $(PRG)_S >/dev/null 2>&1
+	./build/BBCIM.EXE -ab new.ssd !BOOT !BOOT2 >/dev/null 2>&1
 	./build/BBCIM.EXE -boot new.ssd 3 >/dev/null 2>&1
 
-!BOOT:
-	echo '*EXEC $(PRG)_S' | tr '\n' '\r' > $@
-
-!BOOT2:
-	echo 'CH."$(PRG)"' | tr '\n' '\r' > $@
-
-$(PRG)_S: $(PRG)_S.hh
-	nl -ba < $< | tr '\n' '\r' > $@
-	( echo 'SAVE "$(PRG)"'; \
-	echo '*TITLE "Backup util"'; \
+!BOOT: $(EXECS)
+	( echo '*TITLE "Backup util"'; \
+	cat $^; \
 	echo 'NEW'; \
 	echo '10 CLOSE#0'; \
-	echo '20 OSCLI("DELETE $(PRG)_S")'; \
-	echo '30 OSCLI("DELETE !BOOT")'; \
-	echo '40 OSCLI("RENAME !BOOT2 !BOOT")'; \
-	echo '50 OSCLI("FX255, 247")'; \
+	echo '20 OSCLI("DELETE !BOOT")'; \
+	echo '30 OSCLI("RENAME !BOOT2 !BOOT")'; \
+	echo '40 OSCLI("FX255, 247")'; \
 	echo '60 CALL !-4'; \
-	echo 'RUN'; ) | tr '\n' '\r' >>$@
+	echo 'RUN'; ) | $(NL2CR) > $@
 
-$(PRG)_S.hh: butil.bas Makefile
-	./build/striprem.sh $< $@
+!BOOT2:
+	echo 'CH."$(call toupper,$(BOOT:%.bas=%))"' | $(NL2CR) > $@
+
+%.exec: %.bas Makefile
+	( echo 'NEW' ; \
+	sed '$(STRIPREM)' < $< | \
+	nl -ba; \
+	echo 'SAVE "$(call toupper,$*)"'; \
+	) > $@
+
+%.exec: %.asm Makefile
+	( echo 'NEW' ; \
+	sed '$(STRIPREM)' < $< | \
+	nl -ba; \
+	echo 'RUN'; \
+	) > $@
 
 clean:
-	rm -f $(PRG)_S.hh $(PRG)_S !BOOT !BOOT2 new.ssd
+	rm -f !BOOT !BOOT2 $(EXECS) new.ssd
