@@ -69,7 +69,7 @@ OPT opt%
   DEC zp+6:BNE mc3
 .mc2
   PHP:LDY zp+6:DEY:DEX:TXA:TSX:STA stack+9,X
-  PLA:AND #2:LSR A:EOR #1:STA stack+9,X
+  PLA:AND #2:LSR A:EOR #1:STA stack+10,X
   PLA:STA zp:PLA:STA zp+1
   PLA:STA zp+2:PLA:STA zp+3
   PLA:STA zp+4:PLA:STA zp+5

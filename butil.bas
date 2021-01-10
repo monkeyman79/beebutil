@@ -145,16 +145,16 @@ ENDPROC
 
 :: REM Set bad sectors bit
 DEF PROCsetbad
-bads%?(C% DIV 8)=bads%?(C% DIV 8) OR (2^(C% MOD 8))
+bads%?(C% DIV 8)=(bads%?(C% DIV 8)) OR (2^(C% MOD 8))
 ENDPROC
 
 :: REM Clear bad sectors bit
 DEF PROCclrbad
-bads%?(C% DIV 8)=bads%?(C% DIV 8) AND (255-2^(C% MOD 8))
+bads%?(C% DIV 8)=(bads%?(C% DIV 8)) AND (255-2^(C% MOD 8))
 ENDPROC
 
 :: REM Get bad sector bit
-DEF FNisbad:=(bads%?(C% DIV 8) AND (2^(C% MOD 8)))>0
+DEF FNisbad:=((bads%?(C% DIV 8)) AND (2^(C% MOD 8)))>0
 
 :: REM Get error action
 DEF FNgetact
@@ -220,6 +220,7 @@ UNTIL (R%<>0) OR (C%=scnt%)
 IF R%=0 AND N%=0 THEN msg$="Disk verify successful"
 IF R%=0 AND N%<>0 THEN msg$=STR$(N%)+" sector errors"
 PROCaskret(msg$+".",1):msg$=""
+lastc%=C%
 ENDPROC
 
 :: REM Scan disk (read all sectors)
@@ -244,6 +245,7 @@ UNTIL (R%<>0) OR (C%=scnt%)
 IF R%=0 AND N%=0 THEN msg$="Disk read successful"
 IF R%=0 AND N%<>0 THEN msg$=STR$(N%)+" sector errors"
 PROCaskret(msg$+".",1):msg$=""
+lastc%=C%
 ENDPROC
 
 :: REM Ask user for confirmation and proceed with disk copy
@@ -404,9 +406,9 @@ isbad%=FNisbad
 IF isbad% THEN N%=N%+1:IF (fbad%=-1) THEN fbad%=C%
 IF (fbad%<>-1) AND (NOT isbad%) THEN PRINT FNsectn(sdrv%,fbad% DIV 10,fbad% MOD 10,0);"+";FNnpad(C%-fbad%,2);"  ";:fbad%=-1
 IF (isbad%) AND ((C% MOD 10) = 9) THEN PRINT FNsectn(sdrv%,fbad% DIV 10,fbad% MOD 10,0);"+";FNnpad(C%-fbad%+1,2);"  ";:fbad%=-1
-IF ((C% AND 31)=0) AND (bads%!(C% DIV 32)=0) THEN C%=C%+32 ELSE IF ((C% AND 7)=0) AND (bads%?(C% DIV 8)=0) THEN C%=C%+8 ELSE C%=C%+1
+IF ((C% AND 7)>0) THEN C%=C%+1 ELSE IF (bads%!(C% DIV 8)=0) THEN C%=C%+32 ELSE IF (bads%?(C% DIV 8)=0) THEN C%=C%+8 ELSE C%=C%+1
 UNTIL C%>=sscnt%
-IF (N% MOD 4)<>0 THEN PRINT
+IF (N% MOD 4)>0 THEN PRINT
 PRINT STR$(N%);" bad sectors"
 C%=0:isbad%=FNisbad
 C%=1:isbad%=isbad% OR FNisbad
