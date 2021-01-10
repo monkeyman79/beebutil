@@ -59,7 +59,7 @@ rwpar%!1=BF%: IF cmd%=1 THEN rwpar%!1=VB%
 rwpar%!3=haddr%
 rwpar%?5=3:rwpar%?6=&53
 IF cmd%=2 THEN rwpar%?6=&4B
-rwpar%?7=trk%:rwpar%?8=sec%
+rwpar%?7=trk%:rwpar%?8=sec%+flex%*(1+(drv% AND 2)*5)
 rwpar%?9=cnt% OR &20
 rwpar%?10=&FF
 PRINT TAB(1, 22);
@@ -273,9 +273,9 @@ ENDPROC
 DEF PROCupdate
 stitle$="":sscnt%=800:strk%=0:sfcnt%=0
 dtitle$="":dscnt%=800:dtrk%=0:dfcnt%=0
-IF FNreaddir(sdrv%)=0 THEN stitle$=FNtitle:sscnt%=FNscnt:sfcnt%=FNfcnt
+IF (NOT flex%) AND FNreaddir(sdrv%)=0 THEN stitle$=FNtitle:sscnt%=FNscnt:sfcnt%=FNfcnt
 IF (sscnt%<>400) AND (sscnt%<>800) THEN sscnt%=800
-IF FNreaddir(ddrv%)=0 THEN dtitle$=FNtitle:dscnt%=FNscnt:dfcnt%=FNfcnt
+IF (NOT flex%) AND FNreaddir(ddrv%)=0 THEN dtitle$=FNtitle:dscnt%=FNscnt:dfcnt%=FNfcnt
 IF (dscnt%<>400) AND (dscnt%<>800) THEN dscnt%=800
 strk%=sscnt% DIV 10:dtrk%=dscnt% DIV 10
 msg$="Free memory "+STR$((!4AND&FFFF)-(!2AND&FFFF))+" bytes"
@@ -412,7 +412,7 @@ IF (N% MOD 4)>0 THEN PRINT
 PRINT STR$(N%);" bad sectors"
 C%=0:isbad%=FNisbad
 C%=1:isbad%=isbad% OR FNisbad
-IF FNreaddir(sdrv%)<>0 THEN PRINT "Catalog damaged" ELSE PROCbadfiles
+IF N%=0 THEN ELSE IF FNreaddir(sdrv%)<>0 THEN PRINT "Catalog damaged" ELSE PROCbadfiles
 VDU 28,0,24,39,0
 PROCaskret("Press RETURN",1)
 ENDPROC
@@ -422,14 +422,17 @@ DEF PROCshmenu
 CLS
 PROCmtitle("Backup utility")
 PRINT
-PRINT " (S)rc drive:   ";CHR$(131);sdrv%;" ";FNspad(STR$(strk%),2);"T ";FNspad(STR$(sfcnt%),2);"F ";stitle$
-PRINT " (D)st drive:   ";CHR$(131);ddrv%;" ";FNspad(STR$(dtrk%),2);"T ";FNspad(STR$(dfcnt%),2);"F ";dtitle$
+PRINT " (S)rc drive:   ";CHR$(131);sdrv%;" ";FNspad(STR$(strk%),2);"T ";
+IF (flex%=0) THEN PRINT FNspad(STR$(sfcnt%),2);"F ";stitle$ ELSE PRINT
+PRINT " (D)st drive:   ";CHR$(131);ddrv%;" ";FNspad(STR$(dtrk%),2);"T ";
+IF (flex%=0) THEN PRINT FNspad(STR$(dfcnt%),2);"F ";dtitle$ ELSE PRINT
 PRINT " (T)rack mode:  ";CHR$(131);:IF tmode% THEN PRINT "on": ELSE PRINT "off"
 PRINT " (P)asses:      ";CHR$(131);rep%
 PRINT " (M)ax tries:   ";CHR$(131);try%
 PRINT " (O)n error:    ";CHR$(131);
 IF act%=0 THEN PRINT "fail":ELSE IF act%=1 THEN PRINT "ignore":ELSE PRINT "ask"
 PRINT " (A)uto verify: ";CHR$(131);:IF ver% THEN PRINT "on": ELSE PRINT "off"
+PRINT " (F)lex mode:   ";CHR$(131);:IF flex% THEN PRINT "on": ELSE PRINT "off"
 PRINT ""
 PRINT " (C)opy disk";TAB(20);" (V)erify"
 PRINT " (R)ead disk";TAB(20);" (U)pdate info"
@@ -448,7 +451,7 @@ ON ERROR PROCerror
 *FX 200,1
 *FX 4,2
 PROCcuron(0)
-lastc%=0
+lastc%=0:flex%=0
 sdrv%=0:ddrv%=1
 sscnt%=800:dscnt%=800
 tmode%=1
@@ -470,6 +473,7 @@ IF (key$="D") THEN update%=1:PROCdst
 IF (key$="T") THEN show%=1:tmode%=(tmode%=0)
 IF (key$="P") THEN show%=1:PROCpass
 IF (key$="M") THEN show%=1:PROCtries
+IF (key$="F") THEN show%=1:flex%=1-flex%
 IF (key$="O") THEN show%=1:act%=(act%+1) MOD 3
 IF (key$="A") THEN show%=1:ver%=(ver%=0)
 IF (key$="C") THEN PROCaskcopy(sdrv%,ddrv%,sscnt%)
