@@ -55,20 +55,20 @@ OPT opt%
   INY:LDA (zp),Y:STA zp+3
   INY:LDA (zp),Y:STA zp+4
   INY:LDA (zp),Y:STA zp+5
-  INY:LDA (zp),Y:TAX
+  INY:LDA (zp),Y:TAX:INX
   INY:LDA (zp),Y:TAY:INY:STY zp+6
   LDY #0
 .mc1
-  DEX:CPX #&FF:BNE mc3
-  DEC zp+6:BEQ mc2
+  DEX:BEQ mc4
 .mc3
   LDA (zp+2),Y
-.mc4
   CMP (zp+4),Y:BNE mc2
   INY:BNE mc1:INC zp+3:INC zp+5
   JMP mc1
+.mc4
+  DEC zp+6:BNE mc3
 .mc2
-  PHP:LDY zp+6:DEY:TXA:TSX:STA stack+9,X
+  PHP:LDY zp+6:DEY:DEX:TXA:TSX:STA stack+9,X
   PLA:AND #2:LSR A:EOR #1:STA stack+9,X
   PLA:STA zp:PLA:STA zp+1
   PLA:STA zp+2:PLA:STA zp+3
@@ -84,18 +84,17 @@ OPT opt%
   STX zp:STY zp+1
   LDY #0:LDA (zp),Y:STA zp+2
   INY:LDA (zp),Y:STA zp+3
-  INY:INY:LDA (zp),Y:TAX
+  INY:INY:LDA (zp),Y:TAX:INX
   INY:LDA (zp),Y:TAY:INY:STY zp+4
   LDY #2:LDA (zp),Y
   LDY #0
 .ms1
-  DEX:CPX #&FF:BNE ms3
-  DEC zp+4:BEQ ms2
-.ms3
-  STA (zp+2),Y:BNE ms2
+  DEX:BEQ ms2
+  STA (zp+2),Y
   INY:BNE ms1:INC zp+2
   JMP ms1
 .ms2
+  DEC zp+4:BNE ms1
   PLA:STA zp:PLA:STA zp+1
   PLA:STA zp+2:PLA:STA zp+3
   PLA:STA zp+4:PLA:STA zp+5
