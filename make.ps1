@@ -34,7 +34,14 @@ if ($newer -gt 0) {
     }
 
     echo "Building '$ssd_out'"
+    cat butil.bas | % {
+        if (-not ($_ -match '^\s*$') -and -not ($_ -match '^\s*:: REM ')) {
+            "{0,6} {1}" -f $_.ReadCount, $_
+        }
+    } | Out-File -Encoding ascii butil.bbas
     & "$beebasm" -i $asm_src -do $ssd_out -opt 3 -title "$title"
+    if (-not $?) { Remove-Item $ssd_out }
+    Remove-Item butil.bbas
 } else {
     echo "File '$ssd_out' is up to date."
 }
