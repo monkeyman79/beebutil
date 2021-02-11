@@ -5,9 +5,11 @@ SSD_OUT = butil.ssd
 TITLE = Backup util
 BOOT = butil.bas
 
+BEEBASM_DIR = build/beebasm
+
 EXEEXT = $(if $(findstring Windows_NT,$(OS)),.exe)
 
-BEEBASM = build/beebasm/beebasm$(EXEEXT)
+BEEBASM = $(BEEBASM_DIR)/beebasm$(EXEEXT)
 
 $(SSD_OUT): $(SRCS) $(BEEBASM)
 	$(BEEBASM) -i $(ASM_SRC) -do $@ -opt 3 -title "$(TITLE)"
@@ -15,7 +17,8 @@ $(SSD_OUT): $(SRCS) $(BEEBASM)
 beebasm: $(BEEBASM)
 
 $(BEEBASM):
-	make -C build/beebasm code
+	git submodule update --init
+	make -C $(BEEBASM_DIR)/src code
 
 clean:
 	rm -f $(SSD_OUT)
