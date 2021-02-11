@@ -6,13 +6,20 @@ BBC Basic program from copying floppies en masse. Proper description will come l
 
 ## Building
 
-To build `butil.ssd` floppy image on a Linux machine, execute the following commands:
+### Linux
 
 ```shell-session
 ~/src$ git clone https://github.com/monkeyman79/beebutils.git
 ~/src$ cd beebutils
 ~/src/beebutils$ make
 ```
+
+### Windows
+```
+...\src> git clone https://github.com/monkeyman79/beebutils.git
+...\src> cd beebutils
+...\src\beebutils> make.cmd
+````
 
 This will build prerequisite 'beebasm' in a build/beebasm subdirectory, and
 produce a new bootable floppy image `butil.ssd` in current directory.

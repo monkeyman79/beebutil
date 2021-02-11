@@ -1,4 +1,4 @@
-SRCS = butil.bas bu_lib.asm
+SRCS = butil.bas bu_lib.asm !boot
 ASM_SRC = bu_lib.asm
 SSD_OUT = butil.ssd
 
