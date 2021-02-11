@@ -1,0 +1,3 @@
+[submodule "build/beebasm"]
+	path = build/beebasm
+	url = https://github.com/stardot/beebasm.git

@@ -1,4 +1,3 @@
-MODE 7
 HIMEM=&7800
 MC%=HIMEM
 MCsize%=&400
@@ -15,12 +14,8 @@ stack=&100
 
 zp=&A8
 
-FOR opt%=0 TO 2 STEP 2
-P%=MC%
-PRINT CHR$(30);"Preparing code pass ";opt%/2;"... ";
-[
-
-OPT opt%
+ORG MC%
+GUARD MC% + MCsize%
 
 \ Y,X = 6 bytes block: WORD ptr1, WORD ptr2, WORD size
 .memcmp_vect     JMP memcmp
@@ -75,6 +70,7 @@ OPT opt%
   PLA:STA zp+4:PLA:STA zp+5
   PLA:STA zp+6
   PLA:TAX:PLA
+.exec
   RTS
 
 .memset
@@ -158,7 +154,7 @@ OPT opt%
   CMP #32:BCC ha2
   CMP #127:BCC ha3
 .ha2
-  LDA #ASC"."
+  LDA #'.'
 .ha3
   JSR osasci
   INY:BNE ha1
@@ -328,14 +324,11 @@ OPT opt%
 .ad3
   BRK
   EQUB 31
-]
-$P%="Arguments":len%=LEN($P%):?(P%+len%)=0:P%=P%+len%+1
-IF opt%=0 THEN pass1%=P%
-IF opt%<>1 THEN IF P%<>pass1% THEN PRINT "MC size changed ";~(P%-MC%);" ";~(pass1%-MC%);:STOP
-CLS
-NEXT
-IF P%>MC%+MCsize% THEN PRINT "MC buffer overflow ";P%-(MC%+MCsize%)
-IF P%>MC%+MCsize% THEN STOP
 
-PRINT "Saving code"
-OSCLI "SAVE M.BU_LIB 7800 "+STR$~(P%)
+EQUS "Arguments", 0
+
+.end
+
+SAVE "M.BU_LIB", MC%, end, exec
+PUTBASIC "butil.bas", "BUTIL"
+PUTTEXT "!boot", "!BOOT", 0
