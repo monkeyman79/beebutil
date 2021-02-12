@@ -1,4 +1,4 @@
-version$="1.01"
+version$="1.02"
 MODE 7
 MC%=&7700
 HIMEM=MC%
@@ -162,7 +162,7 @@ DEF FNisbad:=((bads%?(C% DIV 8)) AND (2^(C% MOD 8)))>0
 
 :: REM Get error action
 DEF FNgetact
-IF act%<>2 THEN a%=act%:ELSE a%=FNaskkey("Ignore/Retry/Fail?","IRF",1):IF a%=ASC"I" THEN a%=1:ELSE IF a%=ASC"F" THEN a%=0:ELSE a%=2
+IF cact%<>2 THEN a%=cact%:ELSE a%=FNaskkey("Cont./Retry/Fail/Always cont.?","CRFA",1):IF a%=ASC"C" THEN a%=1:ELSE IF a%=ASC"A" THEN a%=1:cact%=1:ELSE IF a%=ASC"F" THEN a%=0:ELSE a%=2
 =a%
 
 :: REM Copy and verify disk copy with retries
@@ -425,6 +425,7 @@ ENDPROC
 :: REM Toggle selected ROM
 DEF PROCtgrom
 IF ?(roms%+X%)<>0 THEN ?(&2A1+X%)=?(roms%+X%):?(roms%+X%)=0 ELSE ?(roms%+X%)=?(&2A1+X%):?(&2A1+X%)=0
+update%=1
 ENDPROC
 
 :: REM Display list of ROMs and let user toggle
@@ -489,7 +490,7 @@ lastc%=0:flex%=0
 sdrv%=0:ddrv%=1:serr%=0:derr%=0
 sscnt%=800:dscnt%=800
 tmode%=1
-rep%=3:try%=3
+rep%=1:try%=1
 act%=2:ver%=0
 msg$=""
 haddr%=FNhaddr
@@ -502,13 +503,14 @@ IF show%=2 THEN CLS
 IF show%>0 THEN PROCshmenu: show%=0
 key$=GET$
 msg$=""
+cact%=act%
 IF (key$>="a") AND (key$<="z") THEN key$=CHR$(ASC(key$)-32)
 IF (key$="S") THEN update%=1:PROCsrc
 IF (key$="D") THEN update%=1:PROCdst
 IF (key$="T") THEN show%=1:tmode%=(tmode%=0)
 IF (key$="P") THEN show%=1:PROCpass
 IF (key$="M") THEN show%=1:PROCtries
-IF (key$="F") THEN show%=1:flex%=1-flex%
+IF (key$="F") THEN update%=1:flex%=1-flex%
 IF (key$="O") THEN show%=1:act%=(act%+1) MOD 3
 IF (key$="A") THEN show%=1:ver%=(ver%=0)
 IF (key$="C") THEN PROCaskcopy(sdrv%,ddrv%,sscnt%)
