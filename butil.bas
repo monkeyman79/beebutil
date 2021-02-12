@@ -1,3 +1,4 @@
+version$="1.01"
 MODE 7
 HIMEM=&7800
 osargs=&FFDA
@@ -67,7 +68,7 @@ IF cmd%=0 THEN PRINT "Reading   ";
 IF cmd%=2 THEN PRINT "Writing   ";
 IF cmd%=1 THEN PRINT "Verifying ";
 PRINT FNsectn(drv%,trk%,sec%,1);" +";FNnpad(cnt%,2);" ";
-IF T%=0 THEN PRINT SPC(14);TAB(POS-10,VPOS);:ELSE PRINT "T";FNnpad(T%,2);" ";
+IF T%=0 THEN PRINT SPC(14);TAB(POS-10,VPOS);:ELSE PRINT "R";FNnpad(T%,2);" ";
 X%=rwpar% AND &FF: Y%=rwpar% DIV 256
 A%=&7F:S%=USR(XOSWORD):R%=rwpar%?10
 IF S% AND &40000000 THEN R%=S% AND &FF
@@ -158,7 +159,7 @@ DEF FNisbad:=((bads%?(C% DIV 8)) AND (2^(C% MOD 8)))>0
 
 :: REM Get error action
 DEF FNgetact
-IF act%<>2 THEN a%=act%:ELSE a%=FNaskkey("Ignore/Retry/Fail?","IRF",1):IF a%=ASC"I" THEN a%=1:ELSE IF a%=ASC"F" THEN a%=0: ELSE a%=2
+IF act%<>2 THEN a%=act%:ELSE a%=FNaskkey("Ignore/Retry/Fail?","IRF",1):IF a%=ASC"I" THEN a%=1:ELSE IF a%=ASC"F" THEN a%=0:ELSE a%=2
 =a%
 
 :: REM Copy and verify disk copy with retries
@@ -177,8 +178,8 @@ REPEAT
 PRINT TAB(1,21);:IF P%=1 THEN PRINT SPC(20): ELSE PRINT "Pass ";P%;
 PROCssect("r"):R%=FNread(sdrv%,T%,S%,B%)
 IF (R%<>0) THEN PROCerrmsg("Read",sdrv%)
-IF (R%=0) THEN PROCssect("w"):R%=FNwrite(ddrv%,T%,S%,B%): IF (R%<>0) THEN PROCerrmsg("Write",ddrv%)
-IF (R%=0) AND ver% THEN PROCssect("v"):R%=FNverify(ddrv%,T%,S%,B%): IF (R%>0) OR (R%<-1) THEN PROCerrmsg("Verify",ddrv%)
+IF (R%=0) THEN PROCssect("w"):R%=FNwrite(ddrv%,T%,S%,B%):IF (R%<>0) THEN PROCerrmsg("Write",ddrv%)
+IF (R%=0) AND ver% THEN PROCssect("v"):R%=FNverify(ddrv%,T%,S%,B%):IF (R%>0) OR (R%<-1) THEN PROCerrmsg("Verify",ddrv%)
 IF (R%=-1) THEN msg$="Verify mismatch at &"+STR$~(vmis%)+" in "+FNsectn(ddrv%,T%,S%,1)
 IF (R%=0) THEN msg$="" ELSE IF (B%<>1) AND (R%<>17) THEN PROCssect("?"):B%=1 ELSE P%=P%+1
 PROCmsg(msg$)
@@ -273,12 +274,13 @@ ENDPROC
 DEF PROCupdate
 stitle$="":sscnt%=800:strk%=0:sfcnt%=0
 dtitle$="":dscnt%=800:dtrk%=0:dfcnt%=0
-IF (NOT flex%) AND FNreaddir(sdrv%)=0 THEN stitle$=FNtitle:sscnt%=FNscnt:sfcnt%=FNfcnt
+serr%=0:derr%=0
+IF (NOT flex%) THEN serr%=FNreaddir(sdrv%):IF serr%=0 THEN stitle$=FNtitle:sscnt%=FNscnt:sfcnt%=FNfcnt
 IF (sscnt%<>400) AND (sscnt%<>800) THEN sscnt%=800
-IF (NOT flex%) AND FNreaddir(ddrv%)=0 THEN dtitle$=FNtitle:dscnt%=FNscnt:dfcnt%=FNfcnt
+IF (NOT flex%) THEN derr%=FNreaddir(ddrv%):IF derr%=0 THEN dtitle$=FNtitle:dscnt%=FNscnt:dfcnt%=FNfcnt
 IF (dscnt%<>400) AND (dscnt%<>800) THEN dscnt%=800
 strk%=sscnt% DIV 10:dtrk%=dscnt% DIV 10
-msg$="Free memory "+STR$((!4AND&FFFF)-(!2AND&FFFF))+" bytes"
+msg$="Free memory "+STR$((!4AND&FFFF)-(!2AND&FFFF))+" bytes.      v"+version$
 ENDPROC
 
 :: REM Wait for key from allowed set
@@ -320,7 +322,7 @@ PROCcuron(0)
 PROCmsg("")
 =$inpbuf%
 
-:: REM Input number
+:: REM Input number, at most 3 digits
 DEF FNasknum(ms$)
 PROCmsg(ms$)
 PROCcuron(1)
@@ -329,7 +331,7 @@ N%=0
 REPEAT
 ak%=GET
 IF (ak%=127) AND (inpp%>0) THEN inpp%=inpp%-1:VDU8,32,8
-IF (ak%>=ASC"0") AND (ak%<=ASC"9") AND (inpp%<7) THEN inpbuf%?inpp%=ak%:VDUak%:inpp%=inpp%+1
+IF (ak%>=ASC"0") AND (ak%<=ASC"9") AND (inpp%<3) THEN inpbuf%?inpp%=ak%:VDUak%:inpp%=inpp%+1
 UNTIL ak%=13
 inpbuf%?inpp%=13
 IF inpp%>0 THEN N%=VAL($inpbuf%)
@@ -419,28 +421,30 @@ ENDPROC
 
 :: REM Display main menu
 DEF PROCshmenu
-CLS
 PROCmtitle("Backup utility")
 PRINT
-PRINT " (S)rc drive:   ";CHR$(131);sdrv%;" ";FNspad(STR$(strk%),2);"T ";
-IF (flex%=0) THEN PRINT FNspad(STR$(sfcnt%),2);"F ";stitle$ ELSE PRINT
-PRINT " (D)st drive:   ";CHR$(131);ddrv%;" ";FNspad(STR$(dtrk%),2);"T ";
-IF (flex%=0) THEN PRINT FNspad(STR$(dfcnt%),2);"F ";dtitle$ ELSE PRINT
-PRINT " (T)rack mode:  ";CHR$(131);:IF tmode% THEN PRINT "on": ELSE PRINT "off"
-PRINT " (P)asses:      ";CHR$(131);rep%
-PRINT " (M)ax tries:   ";CHR$(131);try%
-PRINT " (O)n error:    ";CHR$(131);
-IF act%=0 THEN PRINT "fail":ELSE IF act%=1 THEN PRINT "ignore":ELSE PRINT "ask"
-PRINT " (A)uto verify: ";CHR$(131);:IF ver% THEN PRINT "on": ELSE PRINT "off"
-PRINT " (F)lex mode:   ";CHR$(131);:IF flex% THEN PRINT "on": ELSE PRINT "off"
+@%=2
+PRINT " (S)rc drive:   ";CHR$(131);sdrv%;" ";strk%;"T ";
+IF (serr%=0) AND (flex%=0) THEN PRINT sfcnt%;"F ";stitle$; ELSE IF serr%<>0 THEN PRINT "Error#";~serr%;
+PRINT
+PRINT " (D)st drive:   ";CHR$(131);ddrv%;" ";dtrk%;"T ";
+IF (derr%=0) AND (flex%=0) THEN PRINT dfcnt%;"F ";dtitle$; ELSE IF derr%<>0 THEN PRINT "Error#";~derr%;
+PRINT
+PRINT
+PRINT " (T)rack mode:  ";CHR$(131);:IF tmode% THEN PRINT " on"; ELSE PRINT "off";
+PRINT TAB(20);CHR$(135);"(O)n error:";CHR$(131);
+IF act%=0 THEN PRINT "  fail" ELSE IF act%=1 THEN PRINT "ignore" ELSE PRINT "   ask"
+@%=2:PRINT " (M)ax tries:   ";CHR$(131),try%;TAB(20);
+@%=3:PRINT CHR$(135);"(P)asses:    ";CHR$(131),rep%;TAB(39)
+PRINT " (A)uto verify: ";CHR$(131);:IF ver% THEN PRINT " on"; ELSE PRINT "off";
+PRINT TAB(20);CHR$(135);"(F)lex mode:  ";CHR$(131);:IF flex% THEN PRINT " on" ELSE PRINT "off"
 PRINT ""
 PRINT " (C)opy disk";TAB(20);" (V)erify"
 PRINT " (R)ead disk";TAB(20);" (U)pdate info"
 PRINT " (H)exdump"
 PRINT " (B)ad sectors and files"
 PRINT
-PRINT " (.) Catalog"
-PRINT " (*) OSCLI"
+PRINT " (.) Catalog";TAB(20);" (*) OSCLI"
 PRINT " (E)xit"
 PROCmsg(msg$)
 ENDPROC
@@ -452,19 +456,20 @@ ON ERROR PROCerror
 *FX 4,2
 PROCcuron(0)
 lastc%=0:flex%=0
-sdrv%=0:ddrv%=1
+sdrv%=0:ddrv%=1:serr%=0:derr%=0
 sscnt%=800:dscnt%=800
 tmode%=1
 rep%=3:try%=3
 act%=2:ver%=0
 msg$=""
 haddr%=FNhaddr
-done%=0:update%=1:show%=1
+done%=0:update%=1:show%=2
 PROCmtitle("Backup utility")
 PROCmsg("")
 REPEAT
-IF update% THEN PROCupdate: update%=0: show%=1
-IF show% THEN PROCshmenu: show%=0
+IF update% THEN PROCupdate: update%=0: show%=2
+IF show%=2 THEN CLS
+IF show%>0 THEN PROCshmenu: show%=0
 key$=GET$
 msg$=""
 IF (key$>="a") AND (key$<="z") THEN key$=CHR$(ASC(key$)-32)
@@ -479,11 +484,11 @@ IF (key$="A") THEN show%=1:ver%=(ver%=0)
 IF (key$="C") THEN PROCaskcopy(sdrv%,ddrv%,sscnt%)
 IF (key$="V") THEN update%=1:PROCverify(sdrv%,ddrv%,sscnt%)
 IF (key$="R") THEN update%=1:PROCscan(sdrv%,sscnt%)
-IF (key$="B") THEN show%=1:PROCbads
+IF (key$="B") THEN show%=2:PROCbads
 IF (key$="U") THEN update%=1
 IF (key$="H") THEN update%=1:PROChexmain
-IF (key$=".") THEN show%=1:PROCcat
-IF (key$="*") THEN show%=1:PROCusrcli
+IF (key$=".") THEN show%=2:PROCcat
+IF (key$="*") THEN show%=2:PROCusrcli
 IF (key$="E") THEN done%=1
 UNTIL done%
 *FX 200,0
@@ -624,7 +629,7 @@ ENDPROC
 DEF PROCoscli(L$)
 LOCAL R%,S%
 L$=L$+CHR$(13)
-VDU 28,0,21,39,4
+VDU 28,1,21,39,4
 CLS
 CALL addrof,S%,L$
 X%=S% AND 255:Y%=S% DIV 256

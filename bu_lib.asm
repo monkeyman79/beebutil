@@ -1,6 +1,5 @@
 HIMEM=&7800
 MC%=HIMEM
-MCsize%=&400
 
 osargs=&FFDA
 osasci=&FFE3
@@ -15,7 +14,7 @@ stack=&100
 zp=&A8
 
 ORG MC%
-GUARD MC% + MCsize%
+GUARD &7C00
 
 \ Y,X = 6 bytes block: WORD ptr1, WORD ptr2, WORD size
 .memcmp_vect     JMP memcmp
@@ -324,8 +323,7 @@ GUARD MC% + MCsize%
 .ad3
   BRK
   EQUB 31
-
-EQUS "Arguments", 0
+  EQUS "Arguments", 0
 
 .end
 
