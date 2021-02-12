@@ -330,5 +330,5 @@ EQUS "Arguments", 0
 .end
 
 SAVE "M.BU_LIB", MC%, end, exec
-PUTBASIC "butil.bas", "BUTIL"
+PUTBASIC "butil.bbas", "BUTIL"
 PUTTEXT "!boot", "!BOOT", 0
