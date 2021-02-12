@@ -1,7 +1,7 @@
 HIMEM=&7800
 MC%=HIMEM
-MCsize%=&400
 
+osrdrm=&FFB9
 osargs=&FFDA
 osasci=&FFE3
 osword=&FFF1
@@ -15,21 +15,20 @@ stack=&100
 zp=&A8
 
 ORG MC%
-GUARD MC% + MCsize%
+GUARD &7C00
 
 \ Y,X = 6 bytes block: WORD ptr1, WORD ptr2, WORD size
 .memcmp_vect     JMP memcmp
 \ Y,X = 5 bytes block: WORD ptr1, BYTE val, WORD size
 .memset_vect     JMP memset
-\ Y,X = 8 bytes block: DWORD vaddr, WORD addr, WORD size
-.hexdump_vect    JMP hexdump
 \ Y,X = address of integer number to show, A = number of digits
 .printhnum_vect  JMP hnum
 \ A = byte to show
 .printhbyte_vect JMP hbyte
 \ Uses CALL block at address &600
 .addrof_vect     JMP addrof
-
+\ X = rom number
+.printrom_vect   JMP printrom
 \ Same parameters as OSBYTE
 .XOSBYTE_vect    JMP XOSBYTE
 \ Same parameters as OSWORD
@@ -121,117 +120,74 @@ GUARD MC% + MCsize%
   PLA:STA &80:PLA:STA &81
   PLA:RTS
 
-\ Display string of hex bytes
-.hbytes
-  PHA
-  LDA &82:PHA:LDA &81:PHA:LDA &80:PHA
-  STX &80:STY &81
-  TSX:LDA stack+4,X
-  CMP #0:BEQ hbs2
-  STA &82
-  LDY #0
-.hbs1
-  LDA (&80),Y:JSR hbyte
-  INY:CPY &82:BEQ hbs2
-  LDA #32:JSR osasci
-  JMP hbs1
-.hbs2
-  LDY &81:LDX &80
-  PLA:STA &80:PLA:STA &81:PLA:STA &82
-  PLA:RTS
-
-\ Display ascii chars or "." if not readable
-.hascii
-  PHA
-  LDA &82:PHA:LDA &81:PHA:LDA &80:PHA
-  STX &80:STY &81
-  TSX:LDA stack+4,X
-  STA &82
-  LDY #0
-.ha1
-  CPY &82:BEQ ha4
-  LDA (&80),Y
-  CMP #32:BCC ha2
-  CMP #127:BCC ha3
-.ha2
-  LDA #'.'
-.ha3
-  JSR osasci
-  INY:BNE ha1
-.ha4
-  LDY &81:LDX &80
-  PLA:STA &80:PLA:STA &81:PLA:STA &82
-  PLA:RTS
-
 \ Print space
 .spc
   PHA:LDA #32:JSR osasci:PLA:RTS
 
-\ Print number of spaces
-.spcs
-  CPX #0:BEQ sp2
-.sp1
-  JSR spc:DEX:BNE sp1
-.sp2
-  RTS
-
-.vaddr EQUD 0
-.haddr EQUW 0
-.hsize EQUW 0
-
-\ Hexadecimal dump
-.hexdump
-  LDA zp+2:PHA:LDA zp+1:PHA:LDA zp:PHA
-  STX zp:STY zp+1
-  LDY #0:LDA (zp),Y:STA vaddr
-  INY:LDA (zp),Y:STA vaddr+1
-  INY:LDA (zp),Y:STA vaddr+2
-  INY:LDA (zp),Y:STA vaddr+3
-  INY:LDA (zp),Y:STA haddr
-  INY:LDA (zp),Y:STA haddr+1
-  INY:LDA (zp),Y:STA hsize
-  INY:LDA (zp),Y:STA hsize+1
-.hd1
-  LDY #8
-  LDA hsize+1:BNE hd3
-  LDA hsize:BNE hd2
-  PLA:STA zp:PLA:STA zp+1:PLA:STA zp+2
-  RTS
-.hd2
-  CMP #8:BCS hd3
+\ Print string from ROM A at address (&F6)
+.printrom_str
+  PHA
   TAY
-.hd3
-  STY zp+2
-  LDY #vaddr DIV 256:LDX #vaddr AND 255
-  LDA #3
-  JSR hnum
+  JSR osrdrm
+  INC &F6
+  CMP #0
+  BEQ prs1
+  CMP #32
+  BCC prs1
+  CMP #127
+  BCS prs1
+  JSR osasci
+  PLA
+  JMP printrom_str
+.prs1
+  PLA
+  RTS
+
+\ Print " / "
+.sep
+  PHA
+  \ JSR spc
+  LDA #'/'
+  JSR osasci
+  \ JSR spc
+  PLA
+  RTS
+
+\ Print ROM title and copy right
+.printrom
+  LDA #'(':JSR osasci
+  TXA
+  JSR hb1
+  LDA #')':JSR osasci
   JSR spc
-  LDY haddr+1:LDX haddr:LDA zp+2
-  JSR hbytes
-  SEC
-  LDA #25:SBC zp+2:SBC zp+2:SBC zp+2
-  TAX
-  JSR spcs
-  LDY haddr+1:LDX haddr:LDA zp+2
-  JSR hascii
-  SEC
-  LDA #8:SBC zp+2
-  TAX
-  JSR spcs
-  LDA #&D:JSR osasci
-  SEC
-  LDA hsize:SBC zp+2:STA hsize
-  BCS P%+5:DEC hsize+1
-  CLC
-  LDA haddr:ADC zp+2:STA haddr
-  BCC P%+5:INC haddr+1
-  CLC
-  LDA vaddr:ADC zp+2:STA vaddr
-  BCC hd4:INC vaddr+1
-  BNE hd4:INC vaddr+2
-  BNE hd4:INC vaddr+3
-.hd4
-  JMP hd1
+  LDA &F6:PHA
+  LDA &F7:PHA
+  LDA &80:PHA
+  LDA #&80:STA &F7
+  LDA #&07:STA &F6
+  TXA
+  PHA
+  TAY
+  JSR osrdrm
+  STA &80
+  LDA #&09:STA &F6
+  PLA
+  JSR printrom_str
+  LDX &80
+  INX
+  CPX &F6
+  BEQ pr1
+  JSR sep
+  JSR printrom_str
+.pr1
+  JSR sep
+  JSR printrom_str
+  LDA #13
+  JSR osasci
+  PLA:STA &80
+  PLA:STA &F7
+  PLA:STA &F6
+  RTS
 
 .oldSP EQUB 0
 
@@ -324,11 +280,9 @@ GUARD MC% + MCsize%
 .ad3
   BRK
   EQUB 31
-
-EQUS "Arguments", 0
-
+  EQUS "Arguments", 0
 .end
 
 SAVE "M.BU_LIB", MC%, end, exec
-PUTBASIC "butil.bas", "BUTIL"
+PUTBASIC "butil.bbas", "BUTIL"
 PUTTEXT "!boot", "!BOOT", 0

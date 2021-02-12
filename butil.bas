@@ -21,10 +21,10 @@ $sectn%=":0 00/00"
 OSCLI "LOAD M.BU_LIB 7800"
 memcmp    =MC%+3*0
 memset    =MC%+3*1
-hexdump   =MC%+3*2
-printhnum =MC%+3*3
-printhbyte=MC%+3*4
-addrof    =MC%+3*5
+printhnum =MC%+3*2
+printhbyte=MC%+3*3
+addrof    =MC%+3*4
+printrom  =MC%+3*5
 XOSBYTE   =MC%+3*6
 XOSWORD   =MC%+3*7
 XOSCLI    =MC%+3*8
@@ -67,7 +67,7 @@ IF cmd%=0 THEN PRINT "Reading   ";
 IF cmd%=2 THEN PRINT "Writing   ";
 IF cmd%=1 THEN PRINT "Verifying ";
 PRINT FNsectn(drv%,trk%,sec%,1);" +";FNnpad(cnt%,2);" ";
-IF T%=0 THEN PRINT SPC(14);TAB(POS-10,VPOS);:ELSE PRINT "T";FNnpad(T%,2);" ";
+IF T%=0 THEN PRINT SPC(14);TAB(POS-10,VPOS);:ELSE PRINT "R";FNnpad(T%,2);" ";
 X%=rwpar% AND &FF: Y%=rwpar% DIV 256
 A%=&7F:S%=USR(XOSWORD):R%=rwpar%?10
 IF S% AND &40000000 THEN R%=S% AND &FF
@@ -158,7 +158,7 @@ DEF FNisbad:=((bads%?(C% DIV 8)) AND (2^(C% MOD 8)))>0
 
 :: REM Get error action
 DEF FNgetact
-IF act%<>2 THEN a%=act%:ELSE a%=FNaskkey("Ignore/Retry/Fail?","IRF",1):IF a%=ASC"I" THEN a%=1:ELSE IF a%=ASC"F" THEN a%=0: ELSE a%=2
+IF act%<>2 THEN a%=act%:ELSE a%=FNaskkey("Ignore/Retry/Fail?","IRF",1):IF a%=ASC"I" THEN a%=1:ELSE IF a%=ASC"F" THEN a%=0:ELSE a%=2
 =a%
 
 :: REM Copy and verify disk copy with retries
@@ -175,10 +175,10 @@ P%=1
 S%=C% MOD 10: T%=C% DIV 10
 REPEAT
 PRINT TAB(1,21);:IF P%=1 THEN PRINT SPC(20): ELSE PRINT "Pass ";P%;
-PROCssect("r"):R%=FNread(sdrv%,T%,S%,B%)
+PROCssect("r"):PROCoffdst:R%=FNread(sdrv%,T%,S%,B%)
 IF (R%<>0) THEN PROCerrmsg("Read",sdrv%)
-IF (R%=0) THEN PROCssect("w"):R%=FNwrite(ddrv%,T%,S%,B%): IF (R%<>0) THEN PROCerrmsg("Write",ddrv%)
-IF (R%=0) AND ver% THEN PROCssect("v"):R%=FNverify(ddrv%,T%,S%,B%): IF (R%>0) OR (R%<-1) THEN PROCerrmsg("Verify",ddrv%)
+IF (R%=0) THEN PROCssect("w"):PROCoffsrc:R%=FNwrite(ddrv%,T%,S%,B%):IF (R%<>0) THEN PROCerrmsg("Write",ddrv%)
+IF (R%=0) AND ver% THEN PROCssect("v"):R%=FNverify(ddrv%,T%,S%,B%):IF (R%>0) OR (R%<-1) THEN PROCerrmsg("Verify",ddrv%)
 IF (R%=-1) THEN msg$="Verify mismatch at &"+STR$~(vmis%)+" in "+FNsectn(ddrv%,T%,S%,1)
 IF (R%=0) THEN msg$="" ELSE IF (B%<>1) AND (R%<>17) THEN PROCssect("?"):B%=1 ELSE P%=P%+1
 PROCmsg(msg$)
@@ -207,9 +207,9 @@ B%=1:N%=0:C%=0
 IF tmode% THEN B%=10
 REPEAT
 S%=C% MOD 10: T%=C% DIV 10
-PROCssect("r"):R%=FNread(sdrv%,T%,S%,B%)
+PROCssect("r"):PROCoffdst:R%=FNread(sdrv%,T%,S%,B%)
 IF (R%<>0) THEN PROCerrmsg("Read",sdrv%)
-IF (R%=0) THEN PROCssect("v"):R%=FNverify(ddrv%,T%,S%,B%): IF (R%>0) OR (R%<-1) THEN PROCerrmsg("Verify",ddrv%)
+IF (R%=0) THEN PROCssect("v"):PROCoffsrc:R%=FNverify(ddrv%,T%,S%,B%): IF (R%>0) OR (R%<-1) THEN PROCerrmsg("Verify",ddrv%)
 IF (R%=-1) THEN msg$="Verify mismatch at &"+STR$~(vmis%)+" in "+FNsectn(ddrv%,T%,S%,1)
 IF (R%=0) THEN msg$="":PROCssect("*"):PROCclrbad ELSE IF (B%<>1) AND (R%<>17) THEN PROCssect("?") ELSE IF (R%=-1) THEN PROCssect("x"):PROCsetbad ELSE IF (R%<>17) PROCssect("e"):PROCsetbad
 IF (R%=0) OR (R%=17) THEN a%=0 ELSE IF (B%<>1) THEN a%=2 ELSE a%=FNgetact
@@ -234,7 +234,7 @@ B%=1:N%=0:C%=0
 IF tmode% THEN B%=10
 REPEAT
 S%=C% MOD 10: T%=C% DIV 10
-PROCssect("r"):R%=FNread(sdrv%,T%,S%,B%)
+PROCssect("r"):PROCoffdst:R%=FNread(sdrv%,T%,S%,B%)
 IF (R%<>0) THEN PROCerrmsg("Read",sdrv%)
 IF (R%=0) THEN msg$="":PROCssect("*"):PROCclrbad ELSE IF (B%<>1) AND (R%<>17) THEN PROCssect("?") ELSE PROCssect("e"):PROCsetbad
 IF (R%=0) OR (R%=17) THEN a%=0 ELSE IF (B%<>1) THEN a%=2 ELSE a%=FNgetact
@@ -273,9 +273,10 @@ ENDPROC
 DEF PROCupdate
 stitle$="":sscnt%=800:strk%=0:sfcnt%=0
 dtitle$="":dscnt%=800:dtrk%=0:dfcnt%=0
-IF (NOT flex%) AND FNreaddir(sdrv%)=0 THEN stitle$=FNtitle:sscnt%=FNscnt:sfcnt%=FNfcnt
+serr%=0:derr%=0
+PROCoffdst:IF (NOT flex%) THEN serr%=FNreaddir(sdrv%):IF serr%=0 THEN stitle$=FNtitle:sscnt%=FNscnt:sfcnt%=FNfcnt
 IF (sscnt%<>400) AND (sscnt%<>800) THEN sscnt%=800
-IF (NOT flex%) AND FNreaddir(ddrv%)=0 THEN dtitle$=FNtitle:dscnt%=FNscnt:dfcnt%=FNfcnt
+PROCoffsrc:IF (NOT flex%) THEN derr%=FNreaddir(ddrv%):IF derr%=0 THEN dtitle$=FNtitle:dscnt%=FNscnt:dfcnt%=FNfcnt
 IF (dscnt%<>400) AND (dscnt%<>800) THEN dscnt%=800
 strk%=sscnt% DIV 10:dtrk%=dscnt% DIV 10
 msg$="Free memory "+STR$((!4AND&FFFF)-(!2AND&FFFF))+" bytes"
@@ -329,7 +330,7 @@ N%=0
 REPEAT
 ak%=GET
 IF (ak%=127) AND (inpp%>0) THEN inpp%=inpp%-1:VDU8,32,8
-IF (ak%>=ASC"0") AND (ak%<=ASC"9") AND (inpp%<7) THEN inpbuf%?inpp%=ak%:VDUak%:inpp%=inpp%+1
+IF (ak%>=ASC"0") AND (ak%<=ASC"9") AND (inpp%<3) THEN inpbuf%?inpp%=ak%:VDUak%:inpp%=inpp%+1
 UNTIL ak%=13
 inpbuf%?inpp%=13
 IF inpp%>0 THEN N%=VAL($inpbuf%)
@@ -345,14 +346,14 @@ ENDPROC
 :: REM Ask user for source drive number
 DEF PROCsrc
 K%=FNaskdr("Enter source drive #")
-IF K%=ddrv% THEN ddrv%=sdrv%
+IF K%=ddrv% AND NOT mmc% THEN ddrv%=sdrv%
 sdrv%=K%:msg$=""
 ENDPROC
 
 :: REM Ask user for destination drive number
 DEF PROCdst
 K%=FNaskdr("Enter destination drive #")
-IF K%=sdrv% THEN sdrv%=ddrv%
+IF K%=sdrv% AND NOT mmc% THEN sdrv%=ddrv%
 ddrv%=K%:msg$=""
 ENDPROC
 
@@ -412,37 +413,104 @@ IF (N% MOD 4)>0 THEN PRINT
 PRINT STR$(N%);" bad sectors"
 C%=0:isbad%=FNisbad
 C%=1:isbad%=isbad% OR FNisbad
-IF N%=0 THEN ELSE IF FNreaddir(sdrv%)<>0 THEN PRINT "Catalog damaged" ELSE PROCbadfiles
+PROCoffdst:IF N%=0 THEN ELSE IF FNreaddir(sdrv%)<>0 THEN PRINT "Catalog damaged" ELSE PROCbadfiles
 VDU 28,0,24,39,0
 PROCaskret("Press RETURN",1)
 ENDPROC
 
+:: REM Select source and destination
+DEF PROCselrom
+S%=FNaskkey("Select ROM to DISABLE for source: ", sel$, 1)
+IF S% < 58 THEN dstrom%=S%-48 ELSE dstrom%=S%-55
+srccli$=FNaskln("Command for source? *")
+S%=FNaskkey("Select ROM to DISABLE for dest: ", sel$, 1)
+IF S% < 58 THEN srcrom%=S%-48 ELSE srcrom%=S%-55
+dstcli$=FNaskln("Command for destination? *")
+mmc%=-1
+ENDPROC
+
+:: REM Display list of suitable ROMs and let user select src and dest
+DEF PROCmmcon
+PROCmsg("")
+VDU 28,0,22,39,0
+CLS:PRINT TAB(0,0)
+PRINT "ROMS:"
+PRINT
+cnt%=0
+sel$=""
+FOR X%=0 TO 15
+IF X% < 10 THEN H%=48+X% ELSE H%=55+X%
+IF (?(&2A1+X%) AND &E0) = &80 THEN sel$=sel$+CHR$(H%):cnt%=cnt%+1:CALL printrom
+NEXT X%
+VDU 28,0,24,39,0
+IF cnt%>=2 THEN PROCselrom ELSE PROCaskret("Must have at least two to choose.", 1)
+ENDPROC
+
+:: REM Toggle MMC flag
+DEF PROCmmc
+IF mmc% THEN mmc%=0 ELSE update%=1:PROCmmcon
+IF (NOT mmc%) AND (sdrv%=ddrv%) THEN ddrv%=sdrv% MOD 4
+ENDPROC
+
 :: REM Display main menu
 DEF PROCshmenu
-CLS
 PROCmtitle("Backup utility")
 PRINT
-PRINT " (S)rc drive:   ";CHR$(131);sdrv%;" ";FNspad(STR$(strk%),2);"T ";
-IF (flex%=0) THEN PRINT FNspad(STR$(sfcnt%),2);"F ";stitle$ ELSE PRINT
-PRINT " (D)st drive:   ";CHR$(131);ddrv%;" ";FNspad(STR$(dtrk%),2);"T ";
-IF (flex%=0) THEN PRINT FNspad(STR$(dfcnt%),2);"F ";dtitle$ ELSE PRINT
-PRINT " (T)rack mode:  ";CHR$(131);:IF tmode% THEN PRINT "on": ELSE PRINT "off"
-PRINT " (P)asses:      ";CHR$(131);rep%
-PRINT " (M)ax tries:   ";CHR$(131);try%
-PRINT " (O)n error:    ";CHR$(131);
-IF act%=0 THEN PRINT "fail":ELSE IF act%=1 THEN PRINT "ignore":ELSE PRINT "ask"
-PRINT " (A)uto verify: ";CHR$(131);:IF ver% THEN PRINT "on": ELSE PRINT "off"
-PRINT " (F)lex mode:   ";CHR$(131);:IF flex% THEN PRINT "on": ELSE PRINT "off"
-PRINT ""
+@%=2
+PRINT " (S)rc drive:  ";CHR$(131);sdrv%;" ";strk%;"T ";
+IF (serr%=0) AND (flex%=0) THEN PRINT sfcnt%;"F ";stitle$; ELSE IF serr%<>0 THEN PRINT "Error#";~serr%;
+PRINT
+IF mmc% THEN PRINT TAB(15);CHR$(131);"ROM ";~srcrom%;" ";:IF srccli$<>"" THEN PRINT "*";srccli$;
+PRINT
+PRINT " (D)st drive:  ";CHR$(131);ddrv%;" ";dtrk%;"T ";
+IF (derr%=0) AND (flex%=0) THEN PRINT dfcnt%;"F ";dtitle$; ELSE IF derr%<>0 THEN PRINT "Error#";~derr%;
+PRINT
+IF mmc% THEN PRINT TAB(15);CHR$(131);"ROM ";~dstrom%;" ";:IF dstcli$<>"" THEN PRINT "*";dstcli$;
+PRINT
+PRINT
+PRINT " (T)rack mode: ";CHR$(131);:IF tmode% THEN PRINT "on ";: ELSE PRINT "off";
+PRINT TAB(20);CHR$(135);"(P)asses:     ";CHR$(131);rep%;TAB(39)
+PRINT " (M)ax retries:";CHR$(131);try%;
+PRINT TAB(20);CHR$(135);"(A)uto verify:";CHR$(131);:IF ver% THEN PRINT "on ": ELSE PRINT "off"
+PRINT " (F)lex mode:  ";CHR$(131);:IF flex% THEN PRINT "on ";: ELSE PRINT "off";
+PRINT TAB(20);CHR$(135);"(%) MMC mode: ";CHR$(131);:IF mmc% THEN PRINT "on ": ELSE PRINT "off"
+PRINT " (O)n error:   ";CHR$(131);
+IF act%=0 THEN PRINT "fail  ":ELSE IF act%=1 THEN PRINT "ignore":ELSE PRINT "ask   "
+PRINT
 PRINT " (C)opy disk";TAB(20);" (V)erify"
 PRINT " (R)ead disk";TAB(20);" (U)pdate info"
-PRINT " (H)exdump"
 PRINT " (B)ad sectors and files"
 PRINT
-PRINT " (.) Catalog"
-PRINT " (*) OSCLI"
+IF mmc%=0 THEN PRINT ELSE PRINT " (/) OSCLI mode: ";CHR$(131);:IF climd%=0 THEN PRINT "none" ELSE IF climd%=1 THEN PRINT "src " ELSE PRINT "dst "
+PRINT " (.) Catalog";TAB(20);" (*) OSCLI"
 PRINT " (E)xit"
 PROCmsg(msg$)
+ENDPROC
+
+:: REM Restore ROM byte
+DEF PROCrstrom
+IF romoff%>0 THEN ?romoff%=rombyte%:romoff%=0
+ENDPROC
+
+:: ROM Disable src ROM
+DEF PROCoffsrc
+IF mmc% PROCoffrom(srcrom%)
+IF mmc% AND dstcli$<>"" THEN PROCoscli2(dstcli$)
+ENDPROC
+
+:: ROM Disable dst ROM
+DEF PROCoffdst
+IF mmc% PROCoffrom(dstrom%)
+IF mmc% AND srccli$<>"" THEN PROCoscli2(srccli$)
+ENDPROC
+
+:: ROM Disable ROM
+DEF PROCoffrom(J%)
+PROCrstrom
+*FX143,10
+rombyte%=J%?&2A1
+romoff%=&2A1+J%
+?romoff%=0
 ENDPROC
 
 :: REM Main menu
@@ -451,20 +519,24 @@ ON ERROR PROCerror
 *FX 200,1
 *FX 4,2
 PROCcuron(0)
+mmc%=0:srcrom%=-1:srccli$="":dstrom%=-1:dstcli$=""
+climd%=0
+romoff%=0:rombyte%=0
 lastc%=0:flex%=0
-sdrv%=0:ddrv%=1
+sdrv%=0:ddrv%=1:serr%=0:derr%=0
 sscnt%=800:dscnt%=800
 tmode%=1
 rep%=3:try%=3
 act%=2:ver%=0
 msg$=""
 haddr%=FNhaddr
-done%=0:update%=1:show%=1
+done%=0:update%=1:show%=2
 PROCmtitle("Backup utility")
 PROCmsg("")
 REPEAT
-IF update% THEN PROCupdate: update%=0: show%=1
-IF show% THEN PROCshmenu: show%=0
+IF update% THEN PROCupdate: update%=0: show%=2
+IF show%=2 THEN CLS
+IF show%>0 THEN PROCshmenu: show%=0
 key$=GET$
 msg$=""
 IF (key$>="a") AND (key$<="z") THEN key$=CHR$(ASC(key$)-32)
@@ -479,12 +551,13 @@ IF (key$="A") THEN show%=1:ver%=(ver%=0)
 IF (key$="C") THEN PROCaskcopy(sdrv%,ddrv%,sscnt%)
 IF (key$="V") THEN update%=1:PROCverify(sdrv%,ddrv%,sscnt%)
 IF (key$="R") THEN update%=1:PROCscan(sdrv%,sscnt%)
-IF (key$="B") THEN show%=1:PROCbads
+IF (key$="B") THEN show%=2:PROCbads
 IF (key$="U") THEN update%=1
-IF (key$="H") THEN update%=1:PROChexmain
-IF (key$=".") THEN show%=1:PROCcat
-IF (key$="*") THEN show%=1:PROCusrcli
+IF (key$=".") THEN show%=2:PROCcat
+IF (key$="*") THEN show%=2:PROCusrcli
 IF (key$="E") THEN done%=1
+IF (key$="%") THEN show%=2:PROCrstrom:PROCmmc
+IF (key$="/") THEN show%=1:climd%=(climd%+1) MOD 3
 UNTIL done%
 *FX 200,0
 *FX 4,0
@@ -494,96 +567,12 @@ ENDPROC
 :: REM Print hex byte
 DEF PROCprinthbyte(A%):CALL printhbyte:ENDPROC
 
-:: REM Print hex number
-DEF PROCprinthnum(V%,L%)
-!rwpar%=V%
-X%=rwpar% AND 255:Y%=rwpar% DIV 256:A%=L%:CALL printhnum
-ENDPROC
-
 :: REM Format number and pad with leading zeros
 DEF FNnpad(S%,len%):LOCAL st$:st$=STR$(S%)
 =STRING$(len%-LEN(st$),"0")+st$
 
-:: REM Format hex number and pad with leading zeros
-DEF FNhpad(S%,len%):LOCAL st$:st$=STR$~(S%)
-=STRING$(len%-LEN(st$),"0")+st$
-
 :: REM Pad string with spaces
 DEF FNspad(st$,len%):=STRING$(len%-LEN(st$)," ")+st$
-
-:: REM Hexdump main loop
-DEF PROChexmain
-hdrv%=sdrv%:htrk%=0:hsec%=0:hcnt%=10:hoff%=0:ist%=0:msg$="<RETURN>"
-hstat%=-1:hact%=0
-CLS
-W%=0:G%=0
-PROChexhdr
-REPEAT
-k$=GET$
-IF (k$>="a") AND (k$<="z") THEN k$=CHR$(ASC(k$)-32)
-hv%=-1
-IF (k$>="0") AND (k$<="9") THEN hv%=ASC(k$)-48
-IF (k$>="A") AND (k$<="F") THEN hv%=ASC(k$)-65+10
-IF (ist%=0) AND (k$="D") AND (hdrv%=sdrv%) THEN hdrv%=ddrv%:G%=1:k$=""
-IF (ist%=0) AND (k$="D") THEN hdrv%=sdrv%:G%=1
-IF (ist%=0) AND (k$="T") THEN ist%=1:PRINT TAB(9,0);
-IF (ist%=0) AND (k$="S") THEN ist%=3:PRINT TAB(15,0);
-IF (ist%=0) AND (k$="C") THEN ist%=4:PRINT TAB(20,0);
-IF (ist%=0) AND (ASC(k$)=13) THEN PROChexld
-IF (ist%=0) AND (W%=1) AND (k$="W") THEN PROChexwr
-IF (ist%=0) AND (k$="N") AND (hoff%+128<hact%) THEN hoff%=hoff%+128:PRINT TAB(27,0);:PROCprinthnum(hoff%,2):PROChexsh
-IF (ist%=0) AND (k$="P") AND (hoff%>=128) THEN hoff%=hoff%-128:PRINT TAB(27,0);:PROCprinthnum(hoff%,2):PROChexsh
-IF (ist%=2) AND (hv%>=0) THEN htrk%=(htrk% AND &F0) OR hv%:ist%=0:G%=1:k$=""
-IF (ist%=2) AND (ASC(k$)=127) THEN ist%=1:PRINT CHR$(8);:k$=""
-IF (ist%=1) AND (hv%>=0) AND (hv%<=4) THEN htrk%=(htrk% AND &F) OR (hv%*16):ist%=2:G%=1
-IF (ist%=3) AND (hv%>=0) AND (hv%<=9) THEN hsec%=hv%:ist%=0:G%=1:IF hsec%+hcnt%>10 THEN hcnt%=10-hsec%
-IF (ist%=4) AND (hv%>=1) AND (hv%<=10) THEN hcnt%=hv%:ist%=0:G%=1
-IF (ASC(k$)=127) THEN ist%=0
-IF G% THEN W%=0:G%=0:msg$="<RETURN>":PROChexhdr:IF (ist%=2) THEN PRINT TAB(10,0);
-IF (ist%=0) THEN PRINT TAB(0, 24);:PROCcuron(0): ELSE PROCcuron(1)
-UNTIL (k$="X") OR ((k$="E") AND (ist%=0))
-msg$=""
-ENDPROC
-
-:: REM Read sectors for hexdump
-DEF PROChexld
-hres%=FNread(hdrv%,htrk%,hsec%,hcnt%)
-IF hres%<>0 THEN msg$="Error &"+FNhpad((hres% AND &FF),2):ELSE msg$="OK"
-IF hres%=0 THEN hact%=hcnt%*256:IF hoff%>hact%-128 THEN hoff%=hact%-128
-IF (hres%=0) AND (hdrv%=sdrv%) THEN W%=1: ELSE W%=0
-PROChexhdr
-IF hres%=0 THEN PROChexsh
-ENDPROC
-
-:: REM Copy displayed sectors to destination
-DEF PROChexwr
-LOCAL P%,R%
-PRINT TAB(1,24);SPC(38);
-PRINT TAB(0,24);CHR$(157);CHR$(132);
-PRINT "Copy ";FNsectn(sdrv%,htrk%,hsec%);" +";FNnpad(hcnt%,2);" to ";FNsectn(ddrv%,htrk%,hsec%);"?";
-P%=(FNgetkey("YN",1)=ASC"Y")
-IF NOT P% THEN msg$="Cancelled"
-IF P% THEN R%=FNwrite(ddrv%,htrk%,hsec%,hcnt%)
-IF (R%<>0) THEN msg$="Error &"+FNhpad((R% AND &FF),2)
-IF P% AND (R%=0) THEN msg$="Saved"
-PROChexhdr
-ENDPROC
-
-:: REM Show current sector data hexdump
-DEF PROChexsh
-PRINT TAB(0, 2);
-PROCdump(BF% + hoff%, htrk%*2560+hsec%*256+hoff%, 128)
-PRINT TAB(0, 24);
-ENDPROC
-
-:: REM Display header and footer in hexdump
-DEF PROChexhdr
-PRINT TAB(0,0);CHR$(157);CHR$(129);"D";CHR$(132);~hdrv%;CHR$(129);" T";CHR$(132);FNhpad(htrk%,2);CHR$(129);" S";CHR$(132);~hsec%;
-PRINT CHR$(129);" C";CHR$(132);~hcnt%;CHR$(129);" off";CHR$(132);FNhpad(hoff%,4);
-PRINT TAB(0,24);CHR$(157);CHR$(129);"E";CHR$(132);"xit ";CHR$(129);"N";CHR$(132);"ext ";CHR$(129);"P";CHR$(132);"rev ";
-IF W% THEN PRINT CHR$(129);"W";CHR$(132);"rite";:ELSE PRINT STRING$(7," ");
-PRINT CHR$(132);FNspad(msg$,9);
-ENDPROC
 
 :: REM Compare memory
 DEF FNmemcmp(ptr1%,ptr2%,size%)
@@ -606,15 +595,6 @@ X%=rwpar% AND 255:Y%=rwpar% DIV 256
 CALL memset
 ENDPROC
 
-:: REM Hexadecimal memory dump
-DEF PROCdump(addr%,vaddr%,cnt%)
-!rwpar%=vaddr%
-rwpar%!4=addr%
-rwpar%!6=cnt%
-X%=rwpar% AND 255:Y%=rwpar% DIV 256
-CALL hexdump
-ENDPROC
-
 :: REM Enable or disable cursor
 DEF PROCcuron(on%)
 VDU 23,1,on%;0;0;0;
@@ -622,6 +602,9 @@ ENDPROC
 
 :: REM Execute specified OSCLI
 DEF PROCoscli(L$)
+PROCrstrom
+IF climd%=1 THEN PROCoffdst
+IF climd%=2 THEN PROCoffsrc
 LOCAL R%,S%
 L$=L$+CHR$(13)
 VDU 28,0,21,39,4
@@ -632,6 +615,18 @@ R%=USR(XOSCLI) AND &400000FF
 IF R%<>0 THEN REPORT:PRINT
 VDU 28,0,24,39,0
 PROCaskret("Press RETURN",0)
+ENDPROC
+
+:: REM Execute specified OSCLI
+DEF PROCoscli2(L$)
+LOCAL R%,S%
+L$=L$+CHR$(13)
+VDU 28,2,24,37,22
+CALL addrof,S%,L$
+X%=S% AND 255:Y%=S% DIV 256
+R%=USR(XOSCLI) AND &400000FF
+IF R%<>0 THEN REPORT:PRINT
+VDU 28,0,24,39,0
 ENDPROC
 
 :: REM Display disk catalog
@@ -647,6 +642,7 @@ ENDPROC
 :: REM Global error handler
 DEF PROCerror
 ON ERROR OFF
+PROCrstrom
 *FX 200,0
 *FX 4,0
 CLEAR
