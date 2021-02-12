@@ -280,7 +280,7 @@ IF (sscnt%<>400) AND (sscnt%<>800) THEN sscnt%=800
 IF (NOT flex%) THEN derr%=FNreaddir(ddrv%):IF derr%=0 THEN dtitle$=FNtitle:dscnt%=FNscnt:dfcnt%=FNfcnt
 IF (dscnt%<>400) AND (dscnt%<>800) THEN dscnt%=800
 strk%=sscnt% DIV 10:dtrk%=dscnt% DIV 10
-msg$="Free memory "+STR$((!4AND&FFFF)-(!2AND&FFFF))+" bytes.      v"+version$
+msg$="Free memory "+FNspad(STR$((!4AND&FFFF)-(!2AND&FFFF)),5)+" bytes.     v"+version$
 ENDPROC
 
 :: REM Wait for key from allowed set
@@ -518,19 +518,19 @@ DEF FNspad(st$,len%):=STRING$(len%-LEN(st$)," ")+st$
 
 :: REM Hexdump main loop
 DEF PROChexmain
-hdrv%=sdrv%:htrk%=0:hsec%=0:hcnt%=10:hoff%=0:ist%=0:msg$="<RETURN>"
+htrk%=0:hsec%=0:hcnt%=10:hoff%=0:ist%=0:msg$="<RETURN>"
 hstat%=-1:hact%=0
 CLS
 W%=0:G%=0
 PROChexhdr
+PRINT TAB(0,2);"Select (T)rack, (S)ector and (C)ount";
+PRINT TAB(0,3);"and press RETURN"
 REPEAT
 k$=GET$
 IF (k$>="a") AND (k$<="z") THEN k$=CHR$(ASC(k$)-32)
 hv%=-1
 IF (k$>="0") AND (k$<="9") THEN hv%=ASC(k$)-48
 IF (k$>="A") AND (k$<="F") THEN hv%=ASC(k$)-65+10
-IF (ist%=0) AND (k$="D") AND (hdrv%=sdrv%) THEN hdrv%=ddrv%:G%=1:k$=""
-IF (ist%=0) AND (k$="D") THEN hdrv%=sdrv%:G%=1
 IF (ist%=0) AND (k$="T") THEN ist%=1:PRINT TAB(9,0);
 IF (ist%=0) AND (k$="S") THEN ist%=3:PRINT TAB(15,0);
 IF (ist%=0) AND (k$="C") THEN ist%=4:PRINT TAB(20,0);
@@ -552,10 +552,10 @@ ENDPROC
 
 :: REM Read sectors for hexdump
 DEF PROChexld
-hres%=FNread(hdrv%,htrk%,hsec%,hcnt%)
+hres%=FNread(sdrv%,htrk%,hsec%,hcnt%)
 IF hres%<>0 THEN msg$="Error &"+FNhpad((hres% AND &FF),2):ELSE msg$="OK"
 IF hres%=0 THEN hact%=hcnt%*256:IF hoff%>hact%-128 THEN hoff%=hact%-128
-IF (hres%=0) AND (hdrv%=sdrv%) THEN W%=1: ELSE W%=0
+IF (hres%=0) THEN W%=1: ELSE W%=0
 PROChexhdr
 IF hres%=0 THEN PROChexsh
 ENDPROC
@@ -565,11 +565,11 @@ DEF PROChexwr
 LOCAL P%,R%
 PRINT TAB(1,24);SPC(38);
 PRINT TAB(0,24);CHR$(157);CHR$(132);
-PRINT "Copy ";FNsectn(sdrv%,htrk%,hsec%);" +";FNnpad(hcnt%,2);" to ";FNsectn(ddrv%,htrk%,hsec%);"?";
+PRINT "Copy ";FNsectn(sdrv%,htrk%,hsec%,1);" +";FNnpad(hcnt%,2);" to ";FNsectn(ddrv%,htrk%,hsec%,1);"?";
 P%=(FNgetkey("YN",1)=ASC"Y")
-IF NOT P% THEN msg$="Cancelled"
+IF NOT P% THEN msg$="Aborted"
 IF P% THEN R%=FNwrite(ddrv%,htrk%,hsec%,hcnt%)
-IF (R%<>0) THEN msg$="Error &"+FNhpad((R% AND &FF),2)
+IF (R%<>0) THEN msg$="Error#"+FNhpad((R% AND &FF),2)
 IF P% AND (R%=0) THEN msg$="Saved"
 PROChexhdr
 ENDPROC
@@ -583,11 +583,11 @@ ENDPROC
 
 :: REM Display header and footer in hexdump
 DEF PROChexhdr
-PRINT TAB(0,0);CHR$(157);CHR$(129);"D";CHR$(132);~hdrv%;CHR$(129);" T";CHR$(132);FNhpad(htrk%,2);CHR$(129);" S";CHR$(132);~hsec%;
+PRINT TAB(0,0);CHR$(157);CHR$(129);" T";CHR$(132);FNhpad(htrk%,2);CHR$(129);" S";CHR$(132);~hsec%;
 PRINT CHR$(129);" C";CHR$(132);~hcnt%;CHR$(129);" off";CHR$(132);FNhpad(hoff%,4);
 PRINT TAB(0,24);CHR$(157);CHR$(129);"E";CHR$(132);"xit ";CHR$(129);"N";CHR$(132);"ext ";CHR$(129);"P";CHR$(132);"rev ";
 IF W% THEN PRINT CHR$(129);"W";CHR$(132);"rite";:ELSE PRINT STRING$(7," ");
-PRINT CHR$(132);FNspad(msg$,9);
+PRINT CHR$(130);FNspad(msg$,9);
 ENDPROC
 
 :: REM Compare memory
