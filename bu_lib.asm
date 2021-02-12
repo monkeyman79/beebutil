@@ -1,6 +1,7 @@
-HIMEM=&7800
+HIMEM=&7700
 MC%=HIMEM
 
+osrdrm=&FFB9
 osargs=&FFDA
 osasci=&FFE3
 osword=&FFF1
@@ -28,6 +29,8 @@ GUARD &7C00
 .printhbyte_vect JMP hbyte
 \ Uses CALL block at address &600
 .addrof_vect     JMP addrof
+\ X = rom number
+.printrom_vect   JMP printrom
 
 \ Same parameters as OSBYTE
 .XOSBYTE_vect    JMP XOSBYTE
@@ -231,6 +234,84 @@ GUARD &7C00
   BNE hd4:INC vaddr+3
 .hd4
   JMP hd1
+
+\ Print string from ROM A at address (&F6)
+.printrom_str
+  PHA
+  TAY
+  JSR osrdrm
+  INC &F6
+  CMP #0
+  BEQ prs1
+  CMP #32
+  BCC prs1
+  CMP #127
+  BCS prs1
+  JSR osasci
+  PLA
+  JMP printrom_str
+.prs1
+  PLA
+  RTS
+
+\ Print " / "
+.sep
+  PHA
+  LDA #'/'
+  JSR osasci
+  PLA
+  RTS
+
+
+\ Print ROM title, version and copyright
+.printrom
+  LDA #'(':JSR osasci
+  TXA
+  JSR hb1
+  LDA #')':JSR osasci
+  JSR spc
+  LDA &02A1,X
+  BEQ pr2
+  JSR spc
+  JSR spc
+  JSR spc
+  JMP pr3
+.pr2
+  LDA #'O'
+  JSR osasci
+  LDA #'F'
+  JSR osasci
+  JSR osasci
+.pr3
+  JSR spc
+  LDA &F6:PHA
+  LDA &F7:PHA
+  LDA &80:PHA
+  LDA #&80:STA &F7
+  LDA #&07:STA &F6
+  TXA
+  PHA
+  TAY
+  JSR osrdrm
+  STA &80
+  LDA #&09:STA &F6
+  PLA
+  JSR printrom_str
+  LDX &80
+  INX
+  CPX &F6
+  BEQ pr1
+  JSR sep
+  JSR printrom_str
+.pr1
+  JSR sep
+  JSR printrom_str
+  LDA #13
+  JSR osasci
+  PLA:STA &80
+  PLA:STA &F7
+  PLA:STA &F6
+  RTS
 
 .oldSP EQUB 0
 

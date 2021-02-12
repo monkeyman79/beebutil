@@ -1,34 +1,37 @@
 version$="1.01"
 MODE 7
-HIMEM=&7800
+MC%=&7700
+HIMEM=MC%
 osargs=&FFDA
 osbyte=&FFF4
 PROCmcode
 PROCmain
-CLS
+PROCcleanup
 END
 
 :: REM Prepare machine code procedures
 DEF PROCmcode
-MC%=&7800
 DIM BF% 2560
 DIM VB% 2560
 DIM rwpar% 16
 DIM sectn% 10
 DIM inpbuf% 32
 DIM bads% 100
+DIM roms% 16
+FOR I%=0 TO 15:?(roms%+I%)=0:NEXT
 inpp%=0
 $sectn%=":0 00/00"
-OSCLI "LOAD M.BU_LIB 7800"
+OSCLI "LOAD M.BU_LIB "+STR$~MC%
 memcmp    =MC%+3*0
 memset    =MC%+3*1
 hexdump   =MC%+3*2
 printhnum =MC%+3*3
 printhbyte=MC%+3*4
 addrof    =MC%+3*5
-XOSBYTE   =MC%+3*6
-XOSWORD   =MC%+3*7
-XOSCLI    =MC%+3*8
+printrom  =MC%+3*6
+XOSBYTE   =MC%+3*7
+XOSWORD   =MC%+3*8
+XOSCLI    =MC%+3*9
 ENDPROC
 
 :: REM Get current filing system number
@@ -419,6 +422,33 @@ VDU 28,0,24,39,0
 PROCaskret("Press RETURN",1)
 ENDPROC
 
+:: REM Toggle selected ROM
+DEF PROCtgrom
+IF ?(roms%+X%)<>0 THEN ?(&2A1+X%)=?(roms%+X%):?(roms%+X%)=0 ELSE ?(roms%+X%)=?(&2A1+X%):?(&2A1+X%)=0
+ENDPROC
+
+:: REM Display list of ROMs and let user toggle
+DEF PROCroms
+PROCmsg("")
+VDU 28,0,22,39,0
+CLS
+REPEAT
+PRINT TAB(0,0)
+PRINT "ROMS:"
+PRINT
+cnt%=0
+sel$=CHR$(13)
+FOR X%=0 TO 15
+IF X% < 10 THEN H%=48+X% ELSE H%=55+X%
+IF (?(&2A1+X%) <> 0) OR (?(roms%+X%) <> 0) THEN sel$=sel$+CHR$(H%):cnt%=cnt%+1:CALL printrom
+NEXT X%
+VDU 28,0,24,39,0
+S%=FNaskkey("Select ROM or RETURN: ", sel$, 1)
+IF (S% >= 48) AND (S% < 65) THEN X%=S%-48:PROCtgrom
+IF (S% >= 65) THEN X%=S%-55:PROCtgrom
+UNTIL S%=13
+ENDPROC
+
 :: REM Display main menu
 DEF PROCshmenu
 PROCmtitle("Backup utility")
@@ -433,7 +463,7 @@ PRINT
 PRINT
 PRINT " (T)rack mode:  ";CHR$(131);:IF tmode% THEN PRINT " on"; ELSE PRINT "off";
 PRINT TAB(20);CHR$(135);"(O)n error:";CHR$(131);
-IF act%=0 THEN PRINT "  fail" ELSE IF act%=1 THEN PRINT "ignore" ELSE PRINT "   ask"
+IF act%=0 THEN PRINT "  fail" ELSE IF act%=1 THEN PRINT " cont." ELSE PRINT "   ask"
 @%=2:PRINT " (M)ax tries:   ";CHR$(131),try%;TAB(20);
 @%=3:PRINT CHR$(135);"(P)asses:    ";CHR$(131),rep%;TAB(39)
 PRINT " (A)uto verify: ";CHR$(131);:IF ver% THEN PRINT " on"; ELSE PRINT "off";
@@ -441,10 +471,10 @@ PRINT TAB(20);CHR$(135);"(F)lex mode:  ";CHR$(131);:IF flex% THEN PRINT " on" EL
 PRINT ""
 PRINT " (C)opy disk";TAB(20);" (V)erify"
 PRINT " (R)ead disk";TAB(20);" (U)pdate info"
-PRINT " (H)exdump"
 PRINT " (B)ad sectors and files"
 PRINT
 PRINT " (.) Catalog";TAB(20);" (*) OSCLI"
+PRINT " (%) Disable ROMs"
 PRINT " (E)xit"
 PROCmsg(msg$)
 ENDPROC
@@ -489,106 +519,20 @@ IF (key$="U") THEN update%=1
 IF (key$="H") THEN update%=1:PROChexmain
 IF (key$=".") THEN show%=2:PROCcat
 IF (key$="*") THEN show%=2:PROCusrcli
+IF (key$="%") THEN show%=2:PROCroms
 IF (key$="E") THEN done%=1
 UNTIL done%
-*FX 200,0
-*FX 4,0
-PROCcuron(1)
 ENDPROC
 
 :: REM Print hex byte
 DEF PROCprinthbyte(A%):CALL printhbyte:ENDPROC
 
-:: REM Print hex number
-DEF PROCprinthnum(V%,L%)
-!rwpar%=V%
-X%=rwpar% AND 255:Y%=rwpar% DIV 256:A%=L%:CALL printhnum
-ENDPROC
-
 :: REM Format number and pad with leading zeros
 DEF FNnpad(S%,len%):LOCAL st$:st$=STR$(S%)
 =STRING$(len%-LEN(st$),"0")+st$
 
-:: REM Format hex number and pad with leading zeros
-DEF FNhpad(S%,len%):LOCAL st$:st$=STR$~(S%)
-=STRING$(len%-LEN(st$),"0")+st$
-
 :: REM Pad string with spaces
 DEF FNspad(st$,len%):=STRING$(len%-LEN(st$)," ")+st$
-
-:: REM Hexdump main loop
-DEF PROChexmain
-htrk%=0:hsec%=0:hcnt%=10:hoff%=0:ist%=0:msg$="<RETURN>"
-hstat%=-1:hact%=0
-CLS
-W%=0:G%=0
-PROChexhdr
-PRINT TAB(0,2);"Select (T)rack, (S)ector and (C)ount";
-PRINT TAB(0,3);"and press RETURN"
-REPEAT
-k$=GET$
-IF (k$>="a") AND (k$<="z") THEN k$=CHR$(ASC(k$)-32)
-hv%=-1
-IF (k$>="0") AND (k$<="9") THEN hv%=ASC(k$)-48
-IF (k$>="A") AND (k$<="F") THEN hv%=ASC(k$)-65+10
-IF (ist%=0) AND (k$="T") THEN ist%=1:PRINT TAB(9,0);
-IF (ist%=0) AND (k$="S") THEN ist%=3:PRINT TAB(15,0);
-IF (ist%=0) AND (k$="C") THEN ist%=4:PRINT TAB(20,0);
-IF (ist%=0) AND (ASC(k$)=13) THEN PROChexld
-IF (ist%=0) AND (W%=1) AND (k$="W") THEN PROChexwr
-IF (ist%=0) AND (k$="N") AND (hoff%+128<hact%) THEN hoff%=hoff%+128:PRINT TAB(27,0);:PROCprinthnum(hoff%,2):PROChexsh
-IF (ist%=0) AND (k$="P") AND (hoff%>=128) THEN hoff%=hoff%-128:PRINT TAB(27,0);:PROCprinthnum(hoff%,2):PROChexsh
-IF (ist%=2) AND (hv%>=0) THEN htrk%=(htrk% AND &F0) OR hv%:ist%=0:G%=1:k$=""
-IF (ist%=2) AND (ASC(k$)=127) THEN ist%=1:PRINT CHR$(8);:k$=""
-IF (ist%=1) AND (hv%>=0) AND (hv%<=4) THEN htrk%=(htrk% AND &F) OR (hv%*16):ist%=2:G%=1
-IF (ist%=3) AND (hv%>=0) AND (hv%<=9) THEN hsec%=hv%:ist%=0:G%=1:IF hsec%+hcnt%>10 THEN hcnt%=10-hsec%
-IF (ist%=4) AND (hv%>=1) AND (hv%<=10) THEN hcnt%=hv%:ist%=0:G%=1
-IF (ASC(k$)=127) THEN ist%=0
-IF G% THEN W%=0:G%=0:msg$="<RETURN>":PROChexhdr:IF (ist%=2) THEN PRINT TAB(10,0);
-IF (ist%=0) THEN PRINT TAB(0, 24);:PROCcuron(0): ELSE PROCcuron(1)
-UNTIL (k$="X") OR ((k$="E") AND (ist%=0))
-msg$=""
-ENDPROC
-
-:: REM Read sectors for hexdump
-DEF PROChexld
-hres%=FNread(sdrv%,htrk%,hsec%,hcnt%)
-IF hres%<>0 THEN msg$="Error &"+FNhpad((hres% AND &FF),2):ELSE msg$="OK"
-IF hres%=0 THEN hact%=hcnt%*256:IF hoff%>hact%-128 THEN hoff%=hact%-128
-IF (hres%=0) THEN W%=1: ELSE W%=0
-PROChexhdr
-IF hres%=0 THEN PROChexsh
-ENDPROC
-
-:: REM Copy displayed sectors to destination
-DEF PROChexwr
-LOCAL P%,R%
-PRINT TAB(1,24);SPC(38);
-PRINT TAB(0,24);CHR$(157);CHR$(132);
-PRINT "Copy ";FNsectn(sdrv%,htrk%,hsec%,1);" +";FNnpad(hcnt%,2);" to ";FNsectn(ddrv%,htrk%,hsec%,1);"?";
-P%=(FNgetkey("YN",1)=ASC"Y")
-IF NOT P% THEN msg$="Aborted"
-IF P% THEN R%=FNwrite(ddrv%,htrk%,hsec%,hcnt%)
-IF (R%<>0) THEN msg$="Error#"+FNhpad((R% AND &FF),2)
-IF P% AND (R%=0) THEN msg$="Saved"
-PROChexhdr
-ENDPROC
-
-:: REM Show current sector data hexdump
-DEF PROChexsh
-PRINT TAB(0, 2);
-PROCdump(BF% + hoff%, htrk%*2560+hsec%*256+hoff%, 128)
-PRINT TAB(0, 24);
-ENDPROC
-
-:: REM Display header and footer in hexdump
-DEF PROChexhdr
-PRINT TAB(0,0);CHR$(157);CHR$(129);" T";CHR$(132);FNhpad(htrk%,2);CHR$(129);" S";CHR$(132);~hsec%;
-PRINT CHR$(129);" C";CHR$(132);~hcnt%;CHR$(129);" off";CHR$(132);FNhpad(hoff%,4);
-PRINT TAB(0,24);CHR$(157);CHR$(129);"E";CHR$(132);"xit ";CHR$(129);"N";CHR$(132);"ext ";CHR$(129);"P";CHR$(132);"rev ";
-IF W% THEN PRINT CHR$(129);"W";CHR$(132);"rite";:ELSE PRINT STRING$(7," ");
-PRINT CHR$(130);FNspad(msg$,9);
-ENDPROC
 
 :: REM Compare memory
 DEF FNmemcmp(ptr1%,ptr2%,size%)
@@ -609,15 +553,6 @@ rwpar%?2=val%
 rwpar%!3=size%
 X%=rwpar% AND 255:Y%=rwpar% DIV 256
 CALL memset
-ENDPROC
-
-:: REM Hexadecimal memory dump
-DEF PROCdump(addr%,vaddr%,cnt%)
-!rwpar%=vaddr%
-rwpar%!4=addr%
-rwpar%!6=cnt%
-X%=rwpar% AND 255:Y%=rwpar% DIV 256
-CALL hexdump
 ENDPROC
 
 :: REM Enable or disable cursor
@@ -652,10 +587,18 @@ ENDPROC
 :: REM Global error handler
 DEF PROCerror
 ON ERROR OFF
-*FX 200,0
-*FX 4,0
-CLEAR
-MODE 7
+PROCcleanup
 REPORT:PRINT " in line ";ERL
 END
+ENDPROC
+
+:: REM Cleanup on exit
+DEF PROCcleanup
+FOR I%=0 TO 15
+IF ?(roms%+I%)<>0 THEN ?(&2A1+I%)=?(roms%+I%)
+NEXT
+*FX 200,0
+*FX 4,0
+PROCcuron(1)
+CLS
 ENDPROC
