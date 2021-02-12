@@ -17,9 +17,9 @@ STRIPREM = s/:: REM .*$$// ; \
 .DELETE_ON_ERROR:
 
 $(SSD_OUT): $(SRCS) $(BEEBASM)
-	@sed '$(STRIPREM)' < butil.bas | nl -ba -s ' ' | grep -v '^ *[0-9]* $$' > butil.bbas && \
-	$(BEEBASM) -i $(ASM_SRC) -do $@ -opt 3 -title "$(TITLE)" && \
-	rm -f butil.bbas
+	@sed '$(STRIPREM)' < butil.bas | nl -ba -s ' ' | grep -v '^ *[0-9]* $$' > butil.bbas
+	$(BEEBASM) -i $(ASM_SRC) -do $@ -opt 3 -title "$(TITLE)"
+	@rm -f butil.bbas
 
 beebasm: $(BEEBASM)
 
