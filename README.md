@@ -16,7 +16,7 @@ Features:
 <img src="doc/screen1.png" alt="main menu" width="640"/>
 
 * ``S`` - Select source drive number. Displayed info is: number of tracks, number of files in catalog and disk title
-  or error encountered number during catalog sectors read.
+  or error nnumber is an error was encountered during catalog sectors read.
 * ``D`` - Select destination drive number.
 * ``T`` - Track mode - read a track at a time and if that fails, try to read each sector on track separately. There is
   no reason to turn it off.
