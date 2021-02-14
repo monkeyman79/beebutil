@@ -65,6 +65,51 @@ To abort the operation, press ESCAPE key. You may have to try several times, bec
 Displays list of bad sectors, followed by list of files to which those sectors belong. Format of record on bad sectors list is track /
 sector + number of consecutive bad sectors.
 
+### copying FLEX disks to GOTEK
+
+I happen to be in possesion of a 6809 coprocessor board which came along with ROM, presenting itself as ``CMS Flex`` and a few
+floppies with the Flex operating system. The format of those floppies is similar to the foromat of standard DFS floppies, but
+with a different sector numbering scheme - sectors on th first side are numbered from 1 to 10, in contrast to standard 0 to 9, and
+sectors on the second side are numbered 11 to 20, in contrast to repeated numbers 0 to 9. Those differences make it impossible to 
+copy those floppies using standard ``*BACKUP``, and this program also cannot handle those floppies in standard mode.
+
+A new mode has been added specially for those floppies. In this mode the utility uses modified sector numbering scheme, to match this
+of the Flex OS. The target floppy still has to be properly formatted using Flex' ``NEWDISK`` command.
+
+When copying double sided floppies, remeber that despite modified sector numbering, the ``BUTIL`` still sees both sides of the
+floppy separately, and after first side was copied, e.g. from drive 0 to 1, second side must be copied by using drive number 2 and 3.
+
+It is also possible to copy those Flex floppies to a GOTEK drive, but not to a standard ``.ssd`` file, as this assumes default
+sector number. Instead a specially prepared ``.hfe`` file must be used. To create such image file, use HxC Floppy Emulator -
+select ``Load custom RAW file/Create custom floppy`` and enter following parameters (values marked with asterisk are those values
+that are different from standard DFS format):
+
+```cfg
+Track type: FM
+Number of Track: 80
+Number of side: 2 Sides
+Track of a side grouped in the file: No
+Bitrate: 250000
+Sector side: 256 bytes
+Reverse side: No
+RPM: 300
+Sector ID start: 1  *
+Inter side sector numbering: Yes  *
+Interleave: 0
+Skew: 0
+Side based: False
+Total Sector: 1600
+Total Side: 409600
+Format value: 246
+GAP3 length: 16
+Auto GAP: No
+PRE-GAP length: 0
+```
+... and click ``Create empty floppy``. Then select ``Export disk / Save As`` from menu, as save the flie to you GOTEK pendrive
+using default file type.
+
+When copying data from floppy disk to GOTEK, don't forget to copy both sides.
+
 ## building
 
 ### Linux
