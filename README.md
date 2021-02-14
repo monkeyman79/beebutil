@@ -13,7 +13,7 @@ Features:
 * Copying exotic FLEX OS disks
 
 ### main menu
-![main menu](doc/screen1.png)
+<img src="doc/screen1.png" alt="main menu" width="640"/>
 
 * ``S`` - Select source drive number. Displayed info is: number of tracks, number of files in catalog and disk title
   or error encountered number during catalog sectors read.
@@ -37,7 +37,7 @@ Features:
 * ``E`` - Exit program
 
 ### toggle ROMs
-![toggle ROMs](doc/screen2.png)
+<img src="doc/screen2.png" alt="toggle ROMs" width="640"/>
 
 Displays list of installed ROMs. Select ROM by hex number to toggle it on to off. ROMs are disabled by clearing memory location
 ``&2A1+rom``, this prevents MOS from dispatching ``OSWORD`` call ``&7F`` (low-level disk access) to those disabled ROMs. Initial
@@ -46,7 +46,7 @@ values are automatically restored when program exits.
 In the screenshot above, MMC ROM has been disabled to allow copying DFS disks.
 
 ### disk operation screen
-![disk operation screen](doc/screen3.png)
+<img src="doc/screen3.png" alt="disk operation screen" width="640"/>
 
 Each character represents single sector, horizontal strip of ten characters represents one track. Tracks are layed out from top-left,
 down the screen and the to the right, in four columns. Meaning of the characters is:
@@ -60,7 +60,7 @@ down the screen and the to the right, in four columns. Meaning of the characters
 To abort the operation, press ESCAPE key. You may have to try several times, because ESCAPE is active only during disk access.
 
 ### list of bad sectors and files
-![bad sectors](doc/screen5.png)
+<img src="doc/screen5.png" alt="bad sectors" width="640"/>
 
 Displays list of bad sectors, followed by list of files to which those sectors belong. Format of record on bad sectors list is track /
 sector + number of consecutive bad sectors.
