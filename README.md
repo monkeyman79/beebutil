@@ -76,13 +76,15 @@ copy those floppies using standard ``*BACKUP``, and this program also cannot han
 A new mode has been added specially for those floppies. In this mode the utility uses modified sector numbering scheme, to match this
 of the Flex OS. The target floppy still has to be properly formatted using Flex' ``NEWDISK`` command.
 
-When copying double sided floppies, remeber that despite modified sector numbering, the ``BUTIL`` still sees both sides of the
-floppy separately, and after first side was copied, e.g. from drive 0 to 1, second side must be copied by using drive number 2 and 3.
+When copying double sided floppies, remember that despite the modified sector numbering, the ``BUTIL`` still sees each side of the
+floppy separately, and after first side is copied, e.g. from drive 0 to 1, second side must be copied separately
+- from drive 2 to 3.
 
-It is also possible to copy those Flex floppies to a GOTEK drive, but not to a standard ``.ssd`` file, as this assumes default
-sector number. Instead a specially prepared ``.hfe`` file must be used. To create such image file, use HxC Floppy Emulator -
-select ``Load custom RAW file/Create custom floppy`` and enter following parameters (values marked with asterisk are those values
-that are different from standard DFS format):
+It is also possible to copy such Flex floppies to a GOTEK drive, but not to a standard ``.ssd`` file, as this assumes default
+sector numbers. Instead a specially prepared ``.hfe`` file must be used.
+
+To create such an image file, use HxC Floppy Emulator - select ``Load custom RAW file/Create custom floppy`` and enter following 
+parameters (values marked with asterisk are those values that are different from standard DFS format):
 
 ```cfg
 Track type: FM
@@ -105,10 +107,10 @@ GAP3 length: 16
 Auto GAP: No
 PRE-GAP length: 0
 ```
-... and click ``Create empty floppy``. Then select ``Export disk / Save As`` from menu, as save the flie to you GOTEK pendrive
+... and click ``Create empty floppy``. Then select ``Export disk / Save As`` from menu, as save the file to your GOTEK pendrive
 using the default ``HFE`` file type.
 
-When copying data from floppy disk to GOTEK, don't forget to copy both sides.
+When copying data from double sided floppy disk to GOTEK, again, don't forget to copy both sides.
 
 ## building
 
