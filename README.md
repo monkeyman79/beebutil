@@ -43,7 +43,7 @@ Displays list of installed ROMs. Select ROM by hex number to toggle it on to off
 ``&2A1+rom``, this prevents MOS from dispatching ``OSWORD`` call ``&7F`` (low-level disk access) to those disabled ROMs. Initial
 values are automatically restored when program exits.
 
-In the screenshot above, MMC ROM has been disabled to allow copying DFS disks.
+In the screenshot above, the Super MMC ROM has been disabled to allow copying DFS disks.
 
 ### disk operation screen
 <img src="doc/screen3.png" alt="disk operation screen" width="640"/>
