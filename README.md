@@ -112,7 +112,7 @@ When copying data from floppy disk to GOTEK, don't forget to copy both sides.
 
 ## building
 
-### Linux
+### Linux and MinGW
 
 ```shell-session
 ~/src$ git clone https://github.com/monkeyman79/beebutils.git
@@ -130,4 +130,3 @@ When copying data from floppy disk to GOTEK, don't forget to copy both sides.
 This will build prerequisite 'beebasm' in a build/beebasm subdirectory, and
 produce a new bootable floppy image `butil.ssd` in current directory.
 
-Build on mingw was not tested.
