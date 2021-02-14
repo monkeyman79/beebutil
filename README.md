@@ -106,7 +106,7 @@ Auto GAP: No
 PRE-GAP length: 0
 ```
 ... and click ``Create empty floppy``. Then select ``Export disk / Save As`` from menu, as save the flie to you GOTEK pendrive
-using default file type.
+using the default ``HFE`` file type.
 
 When copying data from floppy disk to GOTEK, don't forget to copy both sides.
 
