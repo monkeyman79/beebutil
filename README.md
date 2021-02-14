@@ -77,8 +77,8 @@ A new mode has been added specially for those floppies. In this mode the utility
 of the Flex OS. The target floppy still has to be properly formatted using Flex' ``NEWDISK`` command.
 
 When copying double sided floppies, remember that despite the modified sector numbering, the ``BUTIL`` still sees each side of the
-floppy separately, and after first side is copied, e.g. from drive 0 to 1, second side must be copied separately
-- from drive 2 to 3.
+floppy separately, and after first side is copied, e.g. from drive 0 to 1, second side must be copied separately -
+from drive 2 to 3.
 
 It is also possible to copy such Flex floppies to a GOTEK drive, but not to a standard ``.ssd`` file, as this assumes default
 sector numbers. Instead a specially prepared ``.hfe`` file must be used.
