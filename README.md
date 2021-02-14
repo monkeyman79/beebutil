@@ -8,8 +8,8 @@ Features:
 * Display progress graphically
 * Retry or skip bad sectors
 * Display list of bad sectors and files to which those sectors belong
-* Disable selected ROMs to allow copying DFS disks while MMC ROM is present and vice-versa. Unfortunatelly it
-  doesn't allow copying between physical drive and MMC.
+* Disable selected ROMs to allow copying DFS disks while MMC ROM is present in the system and vice-versa. Unfortunatelly it
+  doesn't allow copying data between physical drive and MMC.
 * Copying exotic FLEX OS disks
 
 ### main menu
