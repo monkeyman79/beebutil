@@ -16,17 +16,17 @@ Features:
 <img src="doc/screen1.png" alt="main menu" width="640"/>
 
 * ``S`` - Select source drive number. Displayed info is: number of tracks, number of files in catalog and disk title
-  or error nnumber is an error was encountered during catalog sectors read.
+  or error number if an error was encountered during catalog sectors read.
 * ``D`` - Select destination drive number.
-* ``T`` - Track mode - read a track at a time and if that fails, try to read each sector on track separately. There is
+* ``T`` - Track mode - read a track at a time and if that fails, try to read each sector on a track separately. There is
   no reason to turn it off.
 * ``O`` - On error - action taken when bad sector is encoutered. Cycles between ``ask``, ``continue`` and ``fail``.
 * ``M`` - Max tries - max. number of times each disk operation is attempted before giving up.
 * ``P`` - Passes - max. number of retries for copy. Effective number of attempted reads or writes is ``passes * max. tries``.
 * ``A`` - Auto verify - verify data during copy operation.
-* ``F`` - Flex mode - for copying Flex OS disks.
+* ``F`` - Flex mode - for copying CMS Flex disks.
 * ``C`` - Copy disk
-* ``V`` - Verify - read and compare source and destination track by track.
+* ``V`` - Verify - read and compare source and destination disks track by track.
 * ``R`` - Read disk - read source disk and check for bad sectors.
 * ``U`` - Update info - read catalog sectors and update data displayed and ``'(S)ource'`` and ``(D)estination`` lines.
 * ``B`` - Bad sectors and files - display list of bad sectors found during last operation.
