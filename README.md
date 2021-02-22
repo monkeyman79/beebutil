@@ -66,16 +66,16 @@ To abort the operation, press ESCAPE key. You may have to try several times, bec
 Displays list of bad sectors, followed by list of files to which those sectors belong. Format of record on bad sectors list is track /
 sector + number of consecutive bad sectors.
 
-### copying FLEX disks to GOTEK
+### copying CMS FLEX disks to GOTEK
 
-I happen to be in possesion of a 6809 coprocessor board which came along with ROM, presenting itself as ``CMS Flex`` and a few
-floppies with the Flex operating system. The format of those floppies is similar to the foromat of standard DFS floppies, but
+I happen to be in possesion of a CMS-6809 second processor board which came along with ROM, presenting itself as ``CMS Flex`` and a few
+floppies with the Flex operating system. The format of those floppies is similar to the format of standard DFS floppies, but
 with a different sector numbering scheme - sectors on th first side are numbered from 1 to 10, in contrast to standard 0 to 9, and
 sectors on the second side are numbered 11 to 20, in contrast to repeated numbers 0 to 9. Those differences make it impossible to 
 copy those floppies using standard ``*BACKUP``, and this program also cannot handle those floppies in standard mode.
 
 A new mode has been added specially for those floppies. In this mode the utility uses modified sector numbering scheme, to match this
-of the Flex OS. The target floppy still has to be properly formatted using Flex' ``NEWDISK`` command.
+of the Flex OS. The target floppy still has to be properly formatted using Flex' ``NEWDISK`` or Flex ROM's ``*FLEX FORMAT`` command.
 
 When copying double sided floppies, remember that despite the modified sector numbering, the ``BUTIL`` still sees each side of the
 floppy separately, and after first side is copied, e.g. from drive 0 to 1, second side must be copied separately -
