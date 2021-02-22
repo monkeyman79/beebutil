@@ -55,6 +55,7 @@ down the screen and the to the right, in four columns. Meaning of the characters
 * ``r`` - reading
 * ``w`` - writing
 * ``v`` - verifying
+* ``e`` - error
 * ``?`` - program couldn't copy entire track at once, now copying sector by sector
 
 To abort the operation, press ESCAPE key. You may have to try several times, because ESCAPE is active only during disk access.
